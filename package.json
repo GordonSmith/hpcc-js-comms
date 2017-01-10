@@ -1,0 +1,27 @@
+{
+  "name": "hpcc-platform-comms",
+  "version": "1.0.0",
+  "description": "HPCC Platform Client Comms Library (TS/JS)",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "scripts": {
+    "build": "tsc -w -p .",
+    "test": "mocha lib/test/"
+  },
+  "dependencies": {
+    "es6-promise": "~4.0.5",
+    "request": "~2.79.0",
+    "url-parse": "~1.1.7"
+  },
+  "devDependencies": {
+    "typescript": "~2.1.4",
+    "mocha": "~3.2.0",
+    "chai": "~3.5.0",
+    "@types/es6-promise": "~0.0.32",
+    "@types/request": "~0.0.39",
+    "@types/mocha": "~2.2.37",
+    "@types/chai": "~3.4.34"
+  },
+  "author": "HPCC Systems",
+  "license": "Apache-2.0"
+}

@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+        "target": "es5",
+        "rootDir": ".",
+        "outDir": "./lib",
+        "module": "umd",
+        "moduleResolution": "node",
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": false,
+        "sourceMap": true,
+        "allowJs": true
+    },
+    "compileOnSave": true,
+    "include": [
+        "src/**/*.ts",
+        "test/**/*.ts"
+    ]
+}

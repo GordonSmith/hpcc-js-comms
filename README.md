@@ -1,2 +1,2 @@
 # hpcc-js-comms
-JavaScrips comms library for hpcc
+TS / JS Communications Library for HPCC Platform
