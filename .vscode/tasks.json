@@ -20,10 +20,10 @@
             ]
         },
         {
-            "taskName": "build",
+            "taskName": "watch",
             "args": [
                 "run",
-                "build"
+                "watch"
             ],
             "isBuildCommand": true,
             "isWatching": true,

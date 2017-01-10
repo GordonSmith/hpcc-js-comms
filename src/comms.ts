@@ -1,10 +1,11 @@
 import { Promise } from "es6-promise";
-import * as request from "request";
-import * as URLParser from "url-parse";
+import { request, json, text } from "d3-request";
 
 const os = {
     EOL: "\n"
 };
+
+type VERB = "GET" | "POST";
 
 class ESPPostResponse {
     protected action: string;
@@ -17,7 +18,7 @@ class ESPPostResponse {
         this.action = action;
         this.form = form;
         this.error = error;
-        if (postResponse && postResponse.statusCode === 200) {
+        if (postResponse && postResponse.status === 200) {
             for (let key in body) {
                 switch (key) {
                     case 'Exceptions':
@@ -66,38 +67,38 @@ class ESPPostResponse {
 
 export class ESPConnection {
     protected url;
-    set href(_: string) {
-        this.url = new URLParser(_);
-    }
-    get href(): string {
-        return this.url.href;
-    }
-    user: string = "";
-    pw: string = "";
+    href: string = "";
+    userID: string = "";
+    userPW: string = "";
 
     constructor(href: string) {
-        this.url = new URLParser(href);
+        this.href = href;
     }
 
-    post(action: string, form: Object): Promise<any> {
+    serialize(obj) {
+        var str = [];
+        for (var key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                str.push(encodeURIComponent(key) + "=" + encodeURIComponent(obj[key]));
+            }
+        }
+        return str.join("&");
+    }
+
+    send(verb: VERB, action: string, form: any): Promise<any> {
         let context = this;
         return new Promise<ESPPostResponse>((resolve, reject) => {
-            let requestInfo = {
-                uri: this.href + '/' + action + '.json',
-                json: true,
-                form: form
-            };
-            if (this.user) {
-                requestInfo["auth"] = {
-                    user: this.user,
-                    pass: this.pw,
-                    sendImmediately: true
-                };
-            }
-
-            request.post(requestInfo, (error, response, body) => {
-                resolve(new ESPPostResponse(action, form, error, response, body));
-            });
+            let formStr = this.serialize(form);
+            request(this.href + '/' + action + '.json' + (verb === "GET" ? "?" + formStr : ""))
+                .header("X-Requested-With", "XMLHttpRequest")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .mimeType("application/json")
+                .user(this.userID)
+                .password(this.userPW)
+                .send(verb, formStr, (error, response: any) => {
+                    resolve(new ESPPostResponse(action, form, error, response, response && response.responseText ? JSON.parse(response.responseText) : null));
+                })
+                ;
         }).then(postResponse => {
             if (postResponse.hasPostErrors()) {
                 throw new Error(postResponse.postErrorsMessage());
@@ -109,6 +110,14 @@ export class ESPConnection {
         }).catch(e => {
             debugger;
         });
+    }
+
+    get(action: string, form: any): Promise<any> {
+        return this.send("GET", action, form);
+    }
+
+    post(action: string, form: any): Promise<any> {
+        return this.send("POST", action, form);
     }
 }
 

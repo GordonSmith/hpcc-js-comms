@@ -3,7 +3,7 @@
         "target": "es5",
         "rootDir": ".",
         "outDir": "./lib",
-        "module": "umd",
+        "module": "commonjs",
         "moduleResolution": "node",
         "experimentalDecorators": true,
         "emitDecoratorMetadata": false,
