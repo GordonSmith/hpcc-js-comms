@@ -1,5 +1,5 @@
 import { Promise } from "es6-promise";
-import { request, json, text } from "d3-request";
+import { request } from "d3-request";
 
 const os = {
     EOL: "\n"
@@ -89,7 +89,7 @@ export class ESPConnection {
         let context = this;
         return new Promise<ESPPostResponse>((resolve, reject) => {
             let formStr = this.serialize(form);
-            request(this.href + '/' + action + '.json' + (verb === "GET" ? "?" + formStr : ""))
+            request(this.href + '/' + action + '.json' + (verb === "GET" ? "?" + formStr : ""), null)
                 .header("X-Requested-With", "XMLHttpRequest")
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .mimeType("application/json")

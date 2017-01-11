@@ -3,16 +3,12 @@
         "target": "es5",
         "rootDir": ".",
         "outDir": "./lib",
-        "module": "commonjs",
+        "module": "umd",
         "moduleResolution": "node",
         "experimentalDecorators": true,
         "emitDecoratorMetadata": false,
-        "sourceMap": true,
+        "sourceMap": false,
         "allowJs": true
     },
-    "compileOnSave": true,
-    "include": [
-        "src/**/*.ts",
-        "test/**/*.ts"
-    ]
+    "compileOnSave": true
 }

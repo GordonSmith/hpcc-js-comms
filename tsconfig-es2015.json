@@ -1,7 +1,9 @@
 {
     "extends": "./tsconfig",
     "compilerOptions": {
-        "outDir": "./lib-rollup",
+        "target": "es5",
+        "rootDir": "src",
+        "outDir": "./dist-es2015",
         "module": "es2015"
     },
     "include": [
