@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>HPCC Systems - Test</title>
+    <script src="../lib/src/index.js"></script>
+    <!-- 
+    <script src="https://rawgit.com/jrburke/requirejs/2.2.0/require.js"></script>
+    -->
+    <!-- 
+    <script src="../dist/rollup-bundle.js"></script>
+    -->
+    <!-- 
+    <script src="../dist/rollup-bundle.js"></script>
+    -->
+
+</head>
+
+<body>
+    <script>
+        //require(["../dist/rollup-bundle"], function (hpccComms) {
+        var espConnection = new ESPConnection("http://192.168.3.22:8010/WsWorkunits");
+        espConnection.userID = "gosmith";
+        espConnection.userPW = "ch@ng3m3";
+        espConnection.get("WUQuery", { PageSize: 2 }).then(function (response) {
+            console.log(response);
+            return response;
+        });
+        //});
+    </script>
+</body>
+
+</html>
