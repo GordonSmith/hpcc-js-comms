@@ -28,3 +28,27 @@ describe("ESPConnection", function () {
         });
     });
 });
+
+describe("ESPConnection-dataland", function () {
+    it("basic", function () {
+        var espConnection = new ESPConnection("http://10.241.12.207:8010/WsWorkunits");
+        expect(espConnection).to.be.not.null;
+        espConnection.userID = "gosmith";
+        espConnection.userPW = "???";
+        return espConnection.get("WUQuery", { PageSize: 2 }).then((response) => {
+            expect(response).to.be.not.null;
+            return response;
+        });
+    });
+});
+
+describe("ESPConnection-vm", function () {
+    it("basic", function () {
+        var espConnection = new ESPConnection("http://192.168.3.22:8010/WsWorkunits");
+        expect(espConnection).to.be.not.null;
+        return espConnection.get("WUQuery", { PageSize: 2 }).then((response) => {
+            expect(response).to.be.not.null;
+            return response;
+        });
+    });
+});

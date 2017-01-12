@@ -14,6 +14,15 @@
             "sourceMaps": true
         },
         {
+            "name": "Launch rollup",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceRoot}/rollup-default.js",
+            "cwd": "${workspaceRoot}",
+            "outFiles": [],
+            "sourceMaps": true
+        },
+        {
             "name": "Run mocha",
             "type": "node",
             "cwd": "${workspaceRoot}",
@@ -30,7 +39,7 @@
             },
             "sourceMaps": true,
             "runtimeExecutable": null,
-            "outDir": "${workspaceRoot}/lib"
+            "outDir": "${workspaceRoot}/lib/test"
         },
         {
             "type": "node",

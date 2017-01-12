@@ -4,30 +4,98 @@
 <head>
     <meta charset="utf-8">
     <title>HPCC Systems - Test</title>
-    <script src="../lib/src/index.js"></script>
-    <!-- 
+
+    <link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
+
+    <!-- -->
+    <script src="../node_modules/requirejs/require.js"></script>
+    <script>
+        requirejs.config({
+            baseUrl: '.',
+            paths: {
+                "es6-promise": "../node_modules/es6-promise/dist/es6-promise",
+                "d3-request": "../node_modules/d3-request/build/d3-request",
+                "d3-collection": "../node_modules/d3-collection/build/d3-collection",
+                "d3-dispatch": "../node_modules/d3-dispatch/build/d3-dispatch",
+                "d3-dsv": "../node_modules/d3-dsv/build/d3-dsv",
+                "mocha": "../node_modules/mocha/mocha",
+                "chai": "../node_modules/chai/chai"
+            }
+        });
+        var testMode = "DEV";
+    </script>
+
+<!-- DEV
+    <script src="../node_modules/requirejs/require.js"></script>
+    <script>
+        requirejs.config({
+            baseUrl: '.',
+            paths: {
+                "es6-promise": "../node_modules/es6-promise/dist/es6-promise",
+                "d3-request": "../node_modules/d3-request/build/d3-request",
+                "d3-collection": "../node_modules/d3-collection/build/d3-collection",
+                "d3-dispatch": "../node_modules/d3-dispatch/build/d3-dispatch",
+                "d3-dsv": "../node_modules/d3-dsv/build/d3-dsv",
+                "mocha": "../node_modules/mocha/mocha",
+                "chai": "../node_modules/chai/chai"
+            }
+        });
+        var testMode = "DEV";
+    </script>
+-->
+<!-- BUNDLE
     <script src="https://rawgit.com/jrburke/requirejs/2.2.0/require.js"></script>
-    -->
-    <!-- 
-    <script src="../dist/rollup-bundle.js"></script>
-    -->
-    <!-- 
-    <script src="../dist/rollup-bundle.js"></script>
+    <script>
+        var testMode = "BUNDLE";
+    </script>
+-->
+<!-- IIFE
+    <script src="../dist/hpcc-platform-comms.js"></script>
+    <script>
+        var testMode = "IIFE";
+    </script>
     -->
 
 </head>
 
 <body>
+    <div id="mocha"></div>
     <script>
-        //require(["../dist/rollup-bundle"], function (hpccComms) {
-        var espConnection = new ESPConnection("http://192.168.3.22:8010/WsWorkunits");
-        espConnection.userID = "gosmith";
-        espConnection.userPW = "ch@ng3m3";
-        espConnection.get("WUQuery", { PageSize: 2 }).then(function (response) {
-            console.log(response);
-            return response;
-        });
-        //});
+        const serverIP = "192.168.3.22";
+        const espUrl = "http://" + serverIP + ":8010/WsWorkunits";
+        switch (testMode) {
+            case "DEV":
+                require(["mocha", "chai"], function () {
+                    mocha.setup('bdd');
+                    require(["../lib/test/ESPConnection"], function (hpccComms) {
+                        doTest(hpccComms);
+                        mocha.run();
+                    });
+                });
+                break;
+            case "BUNDLE":
+                require(["../dist/hpcc-platform-comms"], doTest);
+                break;
+            case "IIFE":
+                doTest(HPCCPlatformComms);
+                break;
+        }
+
+        function doTest(hpccComms) {
+            switch (testMode) {
+                case "DEV":
+                case "BUNDLE":
+                    require(["../lib/test/ESPConnection"], function () {
+                    });
+                    break;
+                case "IIFE":
+                    var espConnection = new hpccComms.ESPConnection("http://192.168.3.22:8010/WsWorkunits");
+                    return espConnection.get("WUQuery", { PageSize: 2 }).then(function (response) {
+                        console.log(response);
+                    });
+                    break;
+            }
+        }
     </script>
 </body>
 

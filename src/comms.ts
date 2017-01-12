@@ -1,4 +1,5 @@
 import { Promise } from "es6-promise";
+import { XMLHttpRequest } from "xmlhttprequest";
 import { request } from "d3-request";
 
 const os = {
@@ -14,11 +15,13 @@ class ESPPostResponse {
     protected exceptions: any;
     protected _content: Object;
 
-    constructor(action: string, form: Object, error?, postResponse?, body?) {
+    constructor(action: string, form: Object, error?, postResponse?) {
         this.action = action;
         this.form = form;
         this.error = error;
         if (postResponse && postResponse.status === 200) {
+            //debugger;
+            let body = JSON.parse(postResponse.responseText);
             for (let key in body) {
                 switch (key) {
                     case 'Exceptions':
@@ -87,28 +90,31 @@ export class ESPConnection {
 
     send(verb: VERB, action: string, form: any): Promise<any> {
         let context = this;
-        return new Promise<ESPPostResponse>((resolve, reject) => {
+        return new Promise<any>((resolve, reject) => {
             let formStr = this.serialize(form);
             request(this.href + '/' + action + '.json' + (verb === "GET" ? "?" + formStr : ""), null)
                 .header("X-Requested-With", "XMLHttpRequest")
                 .header("Content-Type", "application/x-www-form-urlencoded")
-                .mimeType("application/json")
+                //.mimeType("application/json")
                 .user(this.userID)
                 .password(this.userPW)
-                .send(verb, formStr, (error, response: any) => {
-                    resolve(new ESPPostResponse(action, form, error, response, response && response.responseText ? JSON.parse(response.responseText) : null));
+                .on("beforesend", (a) => {
+                    console.log(`beforesend:  `);
                 })
-                ;
+                .on("progress", (a) => {
+                    console.log(`progress:  `);
+                })
+                .on("load", (response) => {
+                    resolve(new ESPPostResponse(action, form, null, response));
+                })
+                .on("error", (response) => {
+                    resolve(new ESPPostResponse(action, form, response));
+                })
+                .send(verb, formStr);
         }).then(postResponse => {
-            if (postResponse.hasPostErrors()) {
-                throw new Error(postResponse.postErrorsMessage());
-            }
-            if (postResponse.hasExceptions()) {
-                throw new Error(postResponse.exceptionsMessage());
-            }
-            return postResponse.content();
+            return postResponse;
         }).catch(e => {
-            debugger;
+            throw (e);
         });
     }
 

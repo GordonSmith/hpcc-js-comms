@@ -7,8 +7,12 @@
         "moduleResolution": "node",
         "experimentalDecorators": true,
         "emitDecoratorMetadata": false,
-        "sourceMap": false,
+        "sourceMap": true,
         "allowJs": true
     },
+    "include": [
+        "./src",
+        "./test"
+    ],
     "compileOnSave": true
 }
