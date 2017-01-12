@@ -1,6 +1,7 @@
 import { Promise } from "es6-promise";
-import { XMLHttpRequest } from "xmlhttprequest";
+//import { XMLHttpRequest } from "xmlhttprequest";
 import { request } from "d3-request";
+import { dispatch } from "d3-dispatch";
 
 const os = {
     EOL: "\n"
@@ -8,7 +9,7 @@ const os = {
 
 type VERB = "GET" | "POST";
 
-class ESPPostResponse {
+export class ESPPostResponse {
     protected action: string;
     protected form: Object;
     protected error: any;
@@ -20,7 +21,6 @@ class ESPPostResponse {
         this.form = form;
         this.error = error;
         if (postResponse && postResponse.status === 200) {
-            //debugger;
             let body = JSON.parse(postResponse.responseText);
             for (let key in body) {
                 switch (key) {
@@ -99,10 +99,8 @@ export class ESPConnection {
                 .user(this.userID)
                 .password(this.userPW)
                 .on("beforesend", (a) => {
-                    console.log(`beforesend:  `);
                 })
                 .on("progress", (a) => {
-                    console.log(`progress:  `);
                 })
                 .on("load", (response) => {
                     resolve(new ESPPostResponse(action, form, null, response));

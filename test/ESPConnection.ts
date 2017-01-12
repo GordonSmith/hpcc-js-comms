@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { ESPConnection } from "../src/comms"
+import { ESPConnection, ESPPostResponse } from "../src/comms"
 
 describe("ESPConnection", function () {
     it("basic", function () {
@@ -29,14 +29,15 @@ describe("ESPConnection", function () {
     });
 });
 
-describe("ESPConnection-dataland", function () {
+describe.skip("ESPConnection-dataland", function () {
     it("basic", function () {
         var espConnection = new ESPConnection("http://10.241.12.207:8010/WsWorkunits");
         expect(espConnection).to.be.not.null;
         espConnection.userID = "gosmith";
         espConnection.userPW = "???";
-        return espConnection.get("WUQuery", { PageSize: 2 }).then((response) => {
+        return espConnection.get("WUQuery", { PageSize: 2 }).then((response: ESPPostResponse) => {
             expect(response).to.be.not.null;
+            expect(response.hasContent()).to.be.true;
             return response;
         });
     });

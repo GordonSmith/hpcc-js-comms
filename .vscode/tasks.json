@@ -23,7 +23,7 @@
             "taskName": "watch",
             "args": [
                 "run",
-                "watch-all"
+                "transpile-dev-watch"
             ],
             "isBuildCommand": true,
             "isWatching": true,
