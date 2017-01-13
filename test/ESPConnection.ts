@@ -1,10 +1,10 @@
 import { expect } from "chai";
 import { ESPConnection } from "../src/comms"
 
-const PUBLIC_SERVER = "192.168.3.22:8010";
-const PUBLIC_URL = `http://${PUBLIC_SERVER}/WsWorkunits`;
+const PUBLIC_URL = `http://192.168.3.22:8010/WsWorkunits`;
 
 describe("ESPConnection", function () {
+    this.timeout(10000);
     it("basic-post", function () {
         var espConnection = new ESPConnection(PUBLIC_URL);
         expect(espConnection).to.be.not.null;
@@ -57,6 +57,7 @@ describe.skip("ESPConnection-dataland", function () {
 });
 
 describe("ESPConnection-vm", function () {
+    this.timeout(10000);
     it("basic", function () {
         var espConnection = new ESPConnection(PUBLIC_URL);
         expect(espConnection).to.be.not.null;
