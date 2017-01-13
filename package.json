@@ -18,8 +18,9 @@
     "test": "npm run transpile-dev && mocha lib/test/"
   },
   "dependencies": {
-    "es6-promise": "~4.0.5",
-    "d3-request": "~1.0.3"
+    "bluebird": "^3.4.7",
+    "d3-request": "~1.0.3",
+    "xmlhttprequest": "GordonSmith/node-XMLHttpRequest#patch-1"
   },
   "devDependencies": {
     "@types/chai": "~3.4.34",

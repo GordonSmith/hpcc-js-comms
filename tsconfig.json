@@ -5,6 +5,7 @@
         "outDir": "./lib",
         "module": "umd",
         "moduleResolution": "node",
+        "strictNullChecks": true,
         "experimentalDecorators": true,
         "emitDecoratorMetadata": false,
         "sourceMap": true,
