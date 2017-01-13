@@ -1,11 +1,22 @@
 import { expect } from "chai";
-import { ESPConnection } from "../src/comms"
+import { ESPConnection } from "../src/connections/connection"
+import { ECLWorkunitServer } from "../src/singletons/ECLWorkunitServer"
 
 declare var process: any;
 var TRAVIS = typeof process !== "undefined" && process.env.TRAVIS;
 
+const VM_HOST = "http://192.168.3.22:8010";
 const VM_URL = "http://192.168.3.22:8010/WsWorkunits";
 const PUBLIC_URL = "http://52.51.90.23:8010/WsWorkunits";
+
+describe.only("ECLWorkunitServer", function () {
+    it("fetch", function () {
+        let server = new ECLWorkunitServer(VM_HOST);
+        return server.fetch().then((workunits) => {
+            debugger;
+        });
+    });
+});
 
 describe("ESPConnection", function () {
     it("basic-post", function () {

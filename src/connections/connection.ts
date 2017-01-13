@@ -18,6 +18,7 @@ type VERB = "GET" | "POST";
 export class Connection {
     userID: string = "";
     userPW: string = "";
+    defaultMode: VERB = "POST";
 
     event = dispatch("progress");
 
@@ -39,7 +40,7 @@ export class Connection {
         return str.join("&");
     }
 
-    protected send(verb: VERB, href: string, form: any): Promise<any> {
+    protected transmit(verb: VERB, href: string, form: any): Promise<any> {
         let context = this;
         this.event.call("progress", this, "preSend");
         return new Promise((resolve, reject) => {
@@ -69,11 +70,15 @@ export class Connection {
     }
 
     get(href: string, form: any): Promise<any> {
-        return this.send("GET", href, form);
+        return this.transmit("GET", href, form);
     }
 
     post(href: string, form: any): Promise<any> {
-        return this.send("POST", href, form);
+        return this.transmit("POST", href, form);
+    }
+
+    send(href: string, form: any): Promise<any> {
+        return this.transmit(this.defaultMode, href, form);
     }
 }
 
@@ -85,8 +90,8 @@ export class ESPConnection extends Connection {
         this.href = href;
     }
 
-    protected send(verb: VERB, action: string, form: any): Promise<ESPresponse> {
-        return super.send(verb, this.href + '/' + action + '.json', form).then((response) => {
+    protected transmit(verb: VERB, action: string, form: any): Promise<ESPresponse> {
+        return super.transmit(verb, this.href + '/' + action + '.json', form).then((response) => {
             let body;
             try {
                 body = JSON.parse(response);

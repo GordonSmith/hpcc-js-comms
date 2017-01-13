@@ -9,7 +9,7 @@ const rollupPlugins = [
         main: true
     }),
     commonjs({
-        namedExports: { 'es6-promise': ["Promise"] }
+        namedExports: { 'bluebird': ["Promise"] }
     })
 ];
 const rollupMinPlugins = rollupPlugins.concat([uglify()]);

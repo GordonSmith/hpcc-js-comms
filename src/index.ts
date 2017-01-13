@@ -1,1 +1,1 @@
-export { ESPConnection } from "./comms";
+export { ESPConnection } from "./connections/connection";
