@@ -2,6 +2,7 @@ import { expect } from "chai";
 import { ESPConnection } from "../src/comms"
 
 declare var process: any;
+var TRAVIS = typeof process !== "undefined" && process.env.TRAVIS;
 
 const VM_URL = "http://192.168.3.22:8010/WsWorkunits";
 const PUBLIC_URL = "http://52.51.90.23:8010/WsWorkunits";
@@ -44,7 +45,7 @@ describe("ESPConnection", function () {
     });
 });
 
-if (!process.env.TRAVIS) {
+if (!TRAVIS) {
     describe.skip("ESPConnection-dataland", function () {
         it("basic", function () {
             var espConnection = new ESPConnection("http://10.241.12.207:8010/WsWorkunits");
