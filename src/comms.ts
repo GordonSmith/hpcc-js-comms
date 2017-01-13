@@ -7,6 +7,11 @@ const os = {
 };
 
 export class ConnectionError extends Error {
+    info;
+    constructor(msg, info) {
+        super(msg);
+        this.info = info;
+    }
 };
 
 type VERB = "GET" | "POST";
@@ -14,7 +19,14 @@ export class Connection {
     userID: string = "";
     userPW: string = "";
 
+    event = dispatch("progress");
+
     constructor() {
+    }
+
+    on(_: string, callback?: Function) {
+        var value = this.event.on.apply(this.event, arguments);
+        return value === this.event ? this : value;
     }
 
     serialize(obj) {
@@ -29,6 +41,7 @@ export class Connection {
 
     protected send(verb: VERB, href: string, form: any): Promise<any> {
         let context = this;
+        this.event.call("progress", this, "preSend");
         return new Promise((resolve, reject) => {
             let formStr = this.serialize(form);
             request(href + (verb === "GET" ? "?" + formStr : ""))
@@ -36,21 +49,22 @@ export class Connection {
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .user(this.userID)
                 .password(this.userPW)
-                .on("beforesend.nodejs", function (_) {
-                    _.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                .on("beforesend.nodejs", (_) => { })
+                .on("progress", (_) => {
+                    this.event.call("progress", this, _);
                 })
-                .on("progress", (_) => { })
                 .on("load", (response: XMLHttpRequest) => {
                     if (response && response.status === 200) {
                         resolve(response.responseText);
                     } else {
-                        reject(new ConnectionError(response.responseText));
+                        reject(new ConnectionError("Statuse !== 200", response.responseText));
                     }
                 })
                 .on("error", (response) => {
-                    reject(new ConnectionError("Connection error"));
+                    reject(new ConnectionError("Unknown", response));
                 })
                 .send(verb, formStr);
+            this.event.call("progress", this, "postSend");
         });
     }
 
@@ -73,7 +87,12 @@ export class ESPConnection extends Connection {
 
     protected send(verb: VERB, action: string, form: any): Promise<ESPresponse> {
         return super.send(verb, this.href + '/' + action + '.json', form).then((response) => {
-            let body = JSON.parse(response);
+            let body;
+            try {
+                body = JSON.parse(response);
+            } catch (e) {
+                throw new ConnectionError('Invalid JSON', response);
+            }
             let exceptions: any | null = null;
             let content: any | null = null;
 
@@ -84,7 +103,7 @@ export class ESPConnection extends Connection {
                         break;
                     default:
                         if (content) {
-                            throw new Error('ESP:  Two Responses');
+                            throw new ConnectionError('ESP:  Two Responses', body);
                         }
                         content = body[key];
                         break;
