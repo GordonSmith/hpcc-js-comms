@@ -1,25 +1,36 @@
 import { Promise } from "bluebird"
-import { WsWorkunits } from "../connections/WsWorkunits"
+import { WsWorkunits, IECLWorkunit } from "../connections/WsWorkunits"
 import { ECLWorkunit } from "./ECLWorkunit"
 
+let wuServers: { [key: string]: ECLWorkunitServer } = {}
 export class ECLWorkunitServer {
     connection: WsWorkunits;
 
-    constructor(host: string) {
+    protected constructor(host: string) {
         this.connection = new WsWorkunits(host);
     }
 
-    fetch(): Promise<ECLWorkunit[]> {
-        return this.connection.WUQuery().then((response) => {
-            if (response.Workunits.ECLWorkunit) {
-                return response.Workunits.ECLWorkunit.map((wuQueryWorkunit) => {
-                    return new ECLWorkunit().update(wuQueryWorkunit);
-                });
-            }
-            return [];
+    static attach(host) {
+        if (!wuServers[host]) {
+            wuServers[host] = new ECLWorkunitServer(host);
+        }
+        return wuServers[host];
+    }
+
+    create(): Promise<ECLWorkunit> {
+        return this.connection.WUCreate().then((response: IECLWorkunit) => {
+            return new ECLWorkunit(this.connection, response.Wuid).updateState(response);
         });
     }
 
-    create() {
+    fetch(): Promise<ECLWorkunit[]> {
+        return this.connection.WUQuery().then((response: IECLWorkunit[]) => {
+            return response.map((eclWorkunit) => {
+                return new ECLWorkunit(this.connection, eclWorkunit.Wuid).updateState(eclWorkunit);
+            });
+        });
     }
+
 }
+
+

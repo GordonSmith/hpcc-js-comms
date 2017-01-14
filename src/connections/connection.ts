@@ -18,7 +18,7 @@ type VERB = "GET" | "POST";
 export class Connection {
     userID: string = "";
     userPW: string = "";
-    defaultMode: VERB = "POST";
+    defaultMode: VERB = "GET";
 
     event = dispatch("progress");
 
@@ -77,7 +77,7 @@ export class Connection {
         return this.transmit("POST", href, form);
     }
 
-    send(href: string, form: any): Promise<any> {
+    send(href: string, form: any = {}): Promise<any> {
         return this.transmit(this.defaultMode, href, form);
     }
 }

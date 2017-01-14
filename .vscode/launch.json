@@ -5,13 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Launch Program",
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
-            "program": "${workspaceRoot}\\test\\lib\\test\\src\\index.js",
+            "program": "${workspaceRoot}/lib/test/ESPConnection.js",
             "cwd": "${workspaceRoot}",
             "outFiles": [],
-            "sourceMaps": true
+            "sourceMaps": true,
+            "outDir": "${workspaceRoot}/lib/test"
         },
         {
             "name": "Launch rollup",
@@ -23,7 +24,7 @@
             "sourceMaps": true
         },
         {
-            "name": "Run mocha",
+            "name": "Debug with mocha",
             "type": "node",
             "request": "launch",
             "cwd": "${workspaceRoot}",
