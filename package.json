@@ -15,7 +15,7 @@
     "transpile-dev-watch": "tsc -w -p .",
     "transpile-es2015": "tsc -p ./tsconfig-es2015.json",
     "build": "npm run transpile-es2015 && node build-rollup.js",
-    "test": "npm run transpile-dev && mocha lib/test/"
+    "test": "npm run transpile-dev && mocha lib/test/runner-mocha.js"
   },
   "dependencies": {
     "bluebird": "^3.4.7",
@@ -27,6 +27,7 @@
     "@types/chai": "~3.4.34",
     "@types/d3-request": "~1.0.1",
     "@types/mocha": "~2.2.37",
+    "@types/bluebird": "~3.0.37",
     "chai": "~3.5.0",
     "mocha": "~3.2.0",
     "requirejs": "~2.3.2",
@@ -34,6 +35,7 @@
     "rollup-plugin-commonjs": "^7.0.0",
     "rollup-plugin-node-resolve": "^2.0.0",
     "rollup-plugin-uglify": "^1.0.1",
+    "tslint": "~4.3.1",
     "typescript": "^2.1.4"
   }
 }

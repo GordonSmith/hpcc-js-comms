@@ -3,7 +3,9 @@
     "compilerOptions": {
         "rootDir": "src",
         "outDir": "./dist-es2015",
-        "module": "es2015"
+        "module": "es2015",
+        "declaration": true,
+        "allowJs": false
     },
     "include": [
         "./src"

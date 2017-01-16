@@ -69,8 +69,7 @@
             case "DEV":
                 require(["mocha", "chai"], function () {
                     mocha.setup('bdd');
-                    require(["../lib/test/ESPConnection"], function (hpccComms) {
-                        doTest(hpccComms);
+                    require(["../lib/test/runner-mocha"], function () {
                         mocha.run();
                     });
                 });

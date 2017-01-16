@@ -1,6 +1,5 @@
-import { Promise } from "bluebird";
-import { request } from "d3-request";
 import { dispatch } from "d3-dispatch";
+import { request } from "d3-request";
 
 const os = {
     EOL: "\n"
@@ -14,11 +13,11 @@ export class ConnectionError extends Error {
     }
 };
 
-type VERB = "GET" | "POST";
+export type VERB = "GET" | "POST";
 export class Connection {
     userID: string = "";
     userPW: string = "";
-    defaultMode: VERB = "GET";
+    defaultMode: VERB = "POST";
 
     event = dispatch("progress");
 
@@ -26,13 +25,13 @@ export class Connection {
     }
 
     on(_: string, callback?: Function) {
-        var value = this.event.on.apply(this.event, arguments);
+        let value = this.event.on.apply(this.event, arguments);
         return value === this.event ? this : value;
     }
 
     serialize(obj) {
-        var str: string[] = [];
-        for (var key in obj) {
+        let str: string[] = [];
+        for (let key in obj) {
             if (obj.hasOwnProperty(key)) {
                 str.push(encodeURIComponent(key) + "=" + encodeURIComponent(obj[key]));
             }
@@ -90,28 +89,30 @@ export class ESPConnection extends Connection {
         this.href = href;
     }
 
-    protected transmit(verb: VERB, action: string, form: any): Promise<ESPresponse> {
-        return super.transmit(verb, this.href + '/' + action + '.json', form).then((response) => {
-            let body;
+    protected transmit(verb: VERB, action: string, form: any): Promise<any> {
+        return super.transmit(verb, this.href + "/" + action + ".json", form).then((response) => {
+            let body: any;
             try {
                 body = JSON.parse(response);
             } catch (e) {
-                throw new ConnectionError('Invalid JSON', response);
+                throw new ConnectionError("Invalid JSON", response);
             }
             let exceptions: any | null = null;
             let content: any | null = null;
 
             for (let key in body) {
-                switch (key) {
-                    case 'Exceptions':
-                        exceptions = body[key];
-                        break;
-                    default:
-                        if (content) {
-                            throw new ConnectionError('ESP:  Two Responses', body);
-                        }
-                        content = body[key];
-                        break;
+                if (body.hasOwnProperty(key)) {
+                    switch (key) {
+                        case "Exceptions":
+                            exceptions = body[key];
+                            break;
+                        default:
+                            if (content) {
+                                throw new ConnectionError("ESP:  Two Responses", body);
+                            }
+                            content = body[key];
+                            break;
+                    }
                 }
             }
             content = content || {};
@@ -122,4 +123,3 @@ export class ESPConnection extends Connection {
         });
     }
 }
-

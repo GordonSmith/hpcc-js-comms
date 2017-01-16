@@ -10,7 +10,12 @@
         "experimentalDecorators": true,
         "emitDecoratorMetadata": false,
         "sourceMap": true,
-        "allowJs": true
+        "allowJs": true,
+        "lib": [
+            "dom",
+            "es2015.promise",
+            "es5"
+        ]
     },
     "include": [
         "./src",

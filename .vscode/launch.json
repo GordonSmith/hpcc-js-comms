@@ -8,20 +8,11 @@
             "name": "Launch Program",
             "type": "node",
             "request": "launch",
-            "program": "${workspaceRoot}/lib/test/ESPConnection.js",
+            "program": "${workspaceRoot}/lib/test/runner-node.js",
             "cwd": "${workspaceRoot}",
             "outFiles": [],
             "sourceMaps": true,
             "outDir": "${workspaceRoot}/lib/test"
-        },
-        {
-            "name": "Launch rollup",
-            "type": "node",
-            "request": "launch",
-            "program": "${workspaceRoot}/rollup-default.js",
-            "cwd": "${workspaceRoot}",
-            "outFiles": [],
-            "sourceMaps": true
         },
         {
             "name": "Debug with mocha",
@@ -34,7 +25,8 @@
                 "-u",
                 "tdd",
                 "--no-timeouts",
-                "lib/test"
+                "--debug",
+                "lib/test/runner-mocha"
             ],
             "env": {
                 "NODE_ENV": "testing"
@@ -42,6 +34,15 @@
             "sourceMaps": true,
             "runtimeExecutable": null,
             "outDir": "${workspaceRoot}/lib/test"
+        },
+        {
+            "name": "Launch rollup",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceRoot}/rollup-default.js",
+            "cwd": "${workspaceRoot}",
+            "outFiles": [],
+            "sourceMaps": true
         },
         {
             "type": "node",

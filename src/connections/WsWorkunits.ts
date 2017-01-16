@@ -1,30 +1,45 @@
-import { Promise } from "bluebird"
-import { ESPConnection } from "./connection"
+import { ESPConnection } from "./connection";
 
 export enum WUStateID {
-    UNKNOWN = 0,
-    COMPILED,
-    RUNNING,
-    COMPLETED,
-    ABORTING,
-    ABORTED,
-    BLOCKED,
-    SUBMITTED,
-    WAIT,
-    FAILED,
-    COMPILING,
-    UPLOADING_FILES,
-    DEBUGGING,
-    DEBUG_RUNNING,
-    PAUSED,
-    NOT_FOUND
+    Unknown = 0,
+    Compiled,
+    Running,
+    Completed,
+    Failed,
+    Archived,
+    Aborting,
+    Aborted,
+    Blocked,
+    Submitted,
+    Scheduled,
+    Compiling,
+    Wait,
+    UploadingFiled,
+    DebugPaused,
+    DebugRunning,
+    Paused,
+    LAST,
+    NotFound = 999
 }
+
+export enum WUAction {
+    Unknown = 0,
+    Compile,
+    Check,
+    Run,
+    ExecuteExisting,
+    Pause,
+    PauseNow,
+    Resume,
+    Debug,
+    __size
+};
 
 export interface IECLWorkunit {
     Wuid: string;
-    Query: {
+    Query?: {
         Text: string;
-    }
+    };
     Cluster?: string;
     DateTimeScheduled?: string;
     HasArchiveQuery?: boolean;
@@ -43,11 +58,18 @@ export interface IWUQueryResponse {
     NumWUs: number;
     Workunits: {
         ECLWorkunit: IECLWorkunit[];
-    }
+    };
 }
 
 export interface IWUCreateResponse {
     Workunit: IECLWorkunit;
+}
+
+export interface IWUUpdateRequest {
+    Wuid: string;
+    QueryText?: string;
+    Action?: WUAction;
+    ResultLimit?: number;
 }
 
 export class WsWorkunits extends ESPConnection {
@@ -55,8 +77,8 @@ export class WsWorkunits extends ESPConnection {
         super(`${href}/WsWorkunits`);
     }
 
-    WUQuery(): Promise<IECLWorkunit[]> {
-        return this.send("WUQuery").then((response: IWUQueryResponse) => {
+    WUQuery(wuid?): Promise<IECLWorkunit[]> {
+        return this.send("WUQuery", { Wuid: wuid }).then((response: IWUQueryResponse) => {
             if (response.Workunits.ECLWorkunit) {
                 return response.Workunits.ECLWorkunit;
             }
@@ -70,13 +92,13 @@ export class WsWorkunits extends ESPConnection {
         });
     }
 
-    WUUpdate(wuid: string, ecl: string): Promise<IECLWorkunit> {
-        return this.send("WUUpdate", { Wuid: wuid, QueryText: ecl }).then((response: IWUCreateResponse) => {
+    WUUpdate(request: IWUUpdateRequest): Promise<IECLWorkunit> {
+        return this.send("WUUpdate", request).then((response: IWUCreateResponse) => {
             return response.Workunit;
         });
     }
 
-    WUSubmit(wuid: string, cluster: string): Promise {
+    WUSubmit(wuid: string, cluster: string): Promise<null> {
         return this.send("WUSubmit", { Wuid: wuid, Cluster: cluster });
     }
 }
