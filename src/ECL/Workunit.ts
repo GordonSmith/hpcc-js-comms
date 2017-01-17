@@ -2,6 +2,8 @@ import { dispatch } from "d3-dispatch";
 import { IECLWorkunit, WsWorkunits, WUAction, WUStateID } from "../connections/WsWorkunits";
 export { WUStateID }
 
+let wus: { [key: string]: Workunit } = {};
+
 export class Workunit {
     connection: WsWorkunits;
     private _state: IECLWorkunit;
@@ -9,6 +11,7 @@ export class Workunit {
     private _events = dispatch("StateIDChanged");
     private _monitorHandle: number;
     private _hasListener: boolean;
+    private _monitorTickCount: number = 0;
 
     get wuid(): string {
         return this._state.Wuid;
@@ -17,7 +20,14 @@ export class Workunit {
         return WUStateID[this._state.StateID ? this._state.StateID : WUStateID.Unknown];
     }
 
-    constructor(connection: WsWorkunits, wuid: string) {
+    static attach(connection: WsWorkunits, wuid: string): Workunit {
+        if (!wus[wuid]) {
+            wus[wuid] = new Workunit(connection, wuid);
+        }
+        return wus[wuid];
+    }
+
+    protected constructor(connection: WsWorkunits, wuid: string) {
         this.connection = connection;
         this._state = {
             Wuid: wuid,
@@ -73,17 +83,33 @@ export class Workunit {
 
     protected _monitor(): void {
         if (this._monitorHandle || this.isComplete()) {
+            this._monitorTickCount = 0;
             return;
         }
-        this._monitorHandle = setInterval(() => {
-            if (this._hasListener) {
-                this.refresh();
-            }
-            if (!this._hasListener || this.isComplete()) {
-                clearInterval(this._monitorHandle);
-                delete this._monitorHandle;
-            }
-        }, 500);
+
+        this._monitorHandle = setTimeout(() => {
+            let refreshPromise: Promise<any> = this._hasListener ? this.refresh() : Promise.resolve(null);
+            refreshPromise.then(() => {
+                this._monitor();
+            });
+            delete this._monitorHandle;
+        }, this._monitorTimeoutDuraction());
+    }
+
+    private _monitorTimeoutDuraction(): number {
+        ++this._monitorTickCount;
+        if (this._monitorTickCount <= 1) {
+            return 0;
+        } else if (this._monitorTickCount <= 3) {
+            return 500;
+        } else if (this._monitorTickCount <= 10) {
+            return 1000;
+        } else if (this._monitorTickCount <= 20) {
+            return 3000;
+        } else if (this._monitorTickCount <= 30) {
+            return 5000;
+        }
+        return 10000;
     }
 
     refresh(): Promise<Workunit> {
@@ -116,3 +142,5 @@ export class Workunit {
         return this;
     }
 }
+
+
