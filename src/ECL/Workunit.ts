@@ -9,7 +9,7 @@ export class Workunit {
     private _state: IECLWorkunit;
     private _submitAction: WUAction;
     private _events = dispatch("StateIDChanged");
-    private _monitorHandle: number;
+    private _monitorHandle: any;
     private _hasListener: boolean;
     private _monitorTickCount: number = 0;
 
@@ -142,5 +142,3 @@ export class Workunit {
         return this;
     }
 }
-
-

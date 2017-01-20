@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch Program",
+            "name": "Node Debug",
             "type": "node",
             "request": "launch",
             "program": "${workspaceRoot}/lib/test/runner-node.js",
@@ -13,6 +13,13 @@
             "outFiles": [],
             "sourceMaps": true,
             "outDir": "${workspaceRoot}/lib/test"
+        },
+        {
+            "name": "Chrome Debug",
+            "type": "chrome",
+            "request": "launch",
+            "url": "file:///C:/Users/gordon/git/hpcc-platform-comms/test/runner-browser.html",
+            "webRoot": "${workspaceRoot}/test"
         },
         {
             "name": "Debug with mocha",
