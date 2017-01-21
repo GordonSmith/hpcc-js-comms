@@ -69,13 +69,13 @@
             case "DEV":
                 require(["mocha", "chai"], function () {
                     mocha.setup('bdd');
-                    require(["../lib/test/runner-mocha"], function () {
+                    require(["../dist-dev/test/runner-mocha"], function () {
                         mocha.run();
                     });
                 });
                 break;
             case "BUNDLE":
-                require(["../dist/hpcc-platform-comms"], doTest);
+                require(["../dist-bundle/hpcc-platform-comms"], doTest);
                 break;
             case "IIFE":
                 doTest(HPCCPlatformComms);
@@ -86,7 +86,7 @@
             switch (testMode) {
                 case "DEV":
                 case "BUNDLE":
-                    require(["../lib/test/ESPConnection"], function () {
+                    require(["../dist-dev/test/ESPConnection"], function () {
                     });
                     break;
                 case "IIFE":

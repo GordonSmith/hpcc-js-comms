@@ -1,0 +1,13 @@
+{
+    "extends": "./tsconfig",
+    "compilerOptions": {
+        "rootDir": "src",
+        "outDir": "./dist-umd",
+        "module": "umd",
+        "declaration": true,
+        "allowJs": false
+    },
+    "include": [
+        "./src"
+    ]
+}

@@ -35,14 +35,9 @@ function doRollup(rollupConfig, writeConfig) {
 }
 
 doRollup(rollupConfig, Object.assign({}, writeConfig, {
-    dest: 'dist/hpcc-platform-comms.js'
-}));
-
-doRollup(rollupConfig, Object.assign({}, writeConfig, {
-    dest: 'dist/hpcc-platformcomms.es2015.js',
-    format: 'es'
+    dest: 'dist-bundle/hpcc-platform-comms.js'
 }));
 
 doRollup(rollupMinConfig, Object.assign({}, writeConfig, {
-    dest: 'dist/hpcc-platform-comms.min.js'
+    dest: 'dist-bundle/hpcc-platform-comms.min.js'
 }));

@@ -8,11 +8,11 @@
             "name": "Node Debug",
             "type": "node",
             "request": "launch",
-            "program": "${workspaceRoot}/lib/test/runner-node.js",
+            "program": "${workspaceRoot}/dist-dev/test/runner-node.js",
             "cwd": "${workspaceRoot}",
             "outFiles": [],
             "sourceMaps": true,
-            "outDir": "${workspaceRoot}/lib/test"
+            "outDir": "${workspaceRoot}/dist-dev/test"
         },
         {
             "name": "Chrome Debug",
@@ -33,14 +33,14 @@
                 "tdd",
                 "--no-timeouts",
                 "--debug",
-                "lib/test/runner-mocha"
+                "dist-dev/test/runner-mocha"
             ],
             "env": {
                 "NODE_ENV": "testing"
             },
             "sourceMaps": true,
             "runtimeExecutable": null,
-            "outDir": "${workspaceRoot}/lib/test"
+            "outDir": "${workspaceRoot}/dist-dev/test"
         },
         {
             "name": "Launch rollup",

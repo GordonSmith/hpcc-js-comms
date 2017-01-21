@@ -1,10 +1,9 @@
 import { createSubmit } from "./ECLWorkunit"
 
 describe.only("ECLWorkunit", function () {
+    this.timeout(10000);
     it("createSubmit", function () {
-        console.log("testStarted");
         return createSubmit().then((response) => {
-            console.log("testEnded");
             return response;
         });
     });

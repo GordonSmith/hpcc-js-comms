@@ -2,7 +2,7 @@
     "compilerOptions": {
         "target": "es5",
         "rootDir": ".",
-        "outDir": "./lib",
+        "outDir": "./dist-dev",
         "module": "umd",
         "moduleResolution": "node",
         "importHelpers": true,
