@@ -8,7 +8,7 @@ export class Workunit {
     connection: WsWorkunits;
     private _state: IECLWorkunit;
     private _submitAction: WUAction;
-    private _events = dispatch("StateIDChanged");
+    private _events = dispatch<Workunit>("StateIDChanged");
     private _monitorHandle: any;
     private _hasListener: boolean;
     private _monitorTickCount: number = 0;
@@ -69,7 +69,7 @@ export class Workunit {
         return false;
     }
 
-    on(id: string, callback: Function): Workunit {
+    on(id: string, callback): Workunit {
         this._events.on(id, callback);
         this._hasListener = false;
         for (let key in this._events) {
@@ -140,5 +140,23 @@ export class Workunit {
             }
         }
         return this;
+    }
+}
+
+let gID: number = 0;
+export class WorkunitMonitor {
+    private wu: Workunit;
+    private id: string;
+    private monitorID: string;
+
+    constructor(wu: Workunit, monitorID: string, callback: Function) {
+        this.id = "WorkunitMonitor_" + ++gID;
+        this.monitorID = monitorID;
+        this.wu = wu;
+        this.wu.on(`${monitorID}.${this.id}`, callback);
+    }
+
+    dispose() {
+        this.wu.on(`${this.monitorID}.${this.id}`, null);
     }
 }
