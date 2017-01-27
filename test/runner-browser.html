@@ -8,6 +8,12 @@
     <link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
 
     <!-- -->
+    <script src="../dist-dev/bundle.js"></script>
+    <script>
+        var testMode = "IIFE";
+    </script>
+
+<!-- DEV
     <script src="../node_modules/requirejs/require.js"></script>
     <script>
         requirejs.config({
@@ -20,24 +26,6 @@
                 "d3-dispatch": "../node_modules/d3-dispatch/build/d3-dispatch",
                 "d3-dsv": "../node_modules/d3-dsv/build/d3-dsv",
                 "tslib": "..//node_modules/tslib/tslib",
-                "mocha": "../node_modules/mocha/mocha",
-                "chai": "../node_modules/chai/chai"
-            }
-        });
-        var testMode = "DEV";
-    </script>
-
-<!-- DEV
-    <script src="../node_modules/requirejs/require.js"></script>
-    <script>
-        requirejs.config({
-            baseUrl: '.',
-            paths: {
-                "es6-promise": "../node_modules/es6-promise/dist/es6-promise",
-                "d3-request": "../node_modules/d3-request/build/d3-request",
-                "d3-collection": "../node_modules/d3-collection/build/d3-collection",
-                "d3-dispatch": "../node_modules/d3-dispatch/build/d3-dispatch",
-                "d3-dsv": "../node_modules/d3-dsv/build/d3-dsv",
                 "mocha": "../node_modules/mocha/mocha",
                 "chai": "../node_modules/chai/chai"
             }

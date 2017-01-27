@@ -1,5 +1,6 @@
 import { dispatch } from "d3-dispatch";
 import { request } from "d3-request";
+import { Promise } from "es6-promise";
 
 const os = {
     EOL: "\n"

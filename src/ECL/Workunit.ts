@@ -1,4 +1,5 @@
 import { dispatch } from "d3-dispatch";
+import { Promise } from "es6-promise";
 import { IECLWorkunit, WsWorkunits, WUAction, WUStateID } from "../connections/WsWorkunits";
 export { WUStateID }
 

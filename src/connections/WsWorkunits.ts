@@ -1,3 +1,4 @@
+import { Promise } from "es6-promise";
 import { ESPConnection } from "./connection";
 
 export enum WUStateID {
@@ -35,7 +36,15 @@ export enum WUAction {
     __size
 };
 
-export interface IECLWorkunit {
+export interface IESPException {
+
+}
+
+export interface IESPResponse {
+    __excpetion: IESPException;
+}
+
+export interface IECLWorkunit extends IESPResponse {
     Wuid: string;
     Query?: {
         Text: string;
@@ -51,6 +60,12 @@ export interface IECLWorkunit {
     StateID?: WUStateID;
     ThorLCR?: boolean;
     TotalClusterTime?: string;
+}
+
+export interface IWUQueryRequest {
+    Wuid?: string;
+    Owner?: string;
+    Jonname?: string;
 }
 
 export interface IWUQueryResponse {
@@ -73,16 +88,21 @@ export interface IWUUpdateRequest {
 }
 
 export class WsWorkunits extends ESPConnection {
-    constructor(href: string) {
+    constructor(href: string = "") {
         super(`${href}/WsWorkunits`);
     }
 
-    WUQuery(wuid?): Promise<IECLWorkunit[]> {
-        return this.send("WUQuery", { Wuid: wuid }).then((response: IWUQueryResponse) => {
-            if (response.Workunits.ECLWorkunit) {
-                return response.Workunits.ECLWorkunit;
+    WUQuery(request: IWUQueryRequest = {}): Promise<IECLWorkunit[]> {
+        return this.send("WUQuery", request).then((response: IWUQueryResponse) => {
+            if (response) {
+                if (response.__exceptions) {
+
+                }
+                if (response.Workunits && response.Workunits.ECLWorkunit) {
+                    return response.Workunits.ECLWorkunit;
+                }
+                throw (new Error("WUQuery:  Missing response"));
             }
-            throw (new Error("WUQuery:  Missing response"));
         });
     }
 

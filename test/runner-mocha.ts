@@ -1,9 +1,9 @@
-import { createSubmit } from "./ECLWorkunit"
+import { all, failedWUQuery } from "./ECLWorkunit";
 
-describe.only("ECLWorkunit", function () {
+describe("ECLWorkunit", function () {
     this.timeout(10000);
     it("createSubmit", function () {
-        return createSubmit().then((response) => {
+        return failedWUQuery().then((response) => {
             return response;
         });
     });

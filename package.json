@@ -14,6 +14,10 @@
     "transpile-dev": "tsc -p .",
     "transpile-dev-watch": "tsc -w -p .",
     "transpile-es2015": "tsc -p ./tsconfig-es2015.json",
+    "transpile-es2015-watch": "tsc -w -p ./tsconfig-es2015.json",
+    "rollup-dev": "rollup -c",
+    "rollup-dev-watch": "rollup --watch -c",
+    "build-dev-watch": "npm run transpile-es2015 && concurrently --kill-others \"npm run transpile-es2015-watch\" \"npm run rollup-dev-watch\"",
     "transpile-umd": "tsc -p ./tsconfig-umd.json",
     "build-bundle": "npm run transpile-es2015 && node build-rollup.js",
     "build": "npm run transpile-umd && npm run build-bundle",
@@ -22,23 +26,24 @@
     "doc": "typedoc --out ./docx/ --tsconfig ./tsconfig.json --exclude node_modules --excludeNotExported --ignoreCompilerErrors src"
   },
   "dependencies": {
-    "bluebird": "^3.4.7",
+    "es6-promise": "~4.0.5",
     "d3-request": "~1.0.3",
     "tslib": "~1.5.0",
     "xmlhttprequest": "GordonSmith/node-XMLHttpRequest#patch-1"
   },
   "devDependencies": {
-    "@types/bluebird": "~3.0.37",
     "@types/chai": "~3.4.34",
     "@types/d3-request": "~1.0.1",
     "@types/mocha": "~2.2.37",
     "chai": "~3.5.0",
+    "concurrently": "^3.1.0",
     "mocha": "~3.2.0",
     "requirejs": "~2.3.2",
     "rollup": "~0.41.1",
     "rollup-plugin-commonjs": "^7.0.0",
     "rollup-plugin-node-resolve": "^2.0.0",
     "rollup-plugin-uglify": "^1.0.1",
+    "rollup-watch": "~3.2.2",
     "tslint": "~4.3.1",
     "typedoc": "^0.5.5",
     "typescript": "^2.1.4"

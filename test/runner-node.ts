@@ -1,5 +1,5 @@
-import { createSubmit } from "./ECLWorkunit"
+import { all } from "./ECLWorkunit"
 
-createSubmit().then(() => {
+all().then(() => {
     console.log("done");
 });
