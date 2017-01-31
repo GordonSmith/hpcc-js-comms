@@ -1,5 +1,5 @@
 import { Promise } from "es6-promise";
-import { ESPConnection } from "./connection";
+import { ESPConnection, mixin, ResponseType } from "./ESPConnection";
 
 export enum WUStateID {
     Unknown = 0,
@@ -36,55 +36,607 @@ export enum WUAction {
     __size
 };
 
-export interface IESPException {
-
+export interface Query {
+    Text: string;
 }
 
-export interface IESPResponse {
-    __excpetion: IESPException;
+export interface ECLHelpFile {
+    Name: string;
+    Type: string;
+    IPAddress: string;
+    Description: string;
+    FileSize: number;
+    PID: number;
+    minActivityId: number;
+    maxActivityId: number;
 }
 
-export interface IECLWorkunit extends IESPResponse {
+export interface Helpers {
+    ECLHelpFile: ECLHelpFile[];
+}
+
+export interface ECLSchemaItem {
+    ColumnName: string;
+    ColumnType: string;
+    ColumnTypeCode: number;
+    isConditional: boolean;
+}
+
+export interface ECLSchemas {
+    ECLSchemaItem: ECLSchemaItem[];
+}
+
+export interface ECLResult {
+    Name: string;
+    Sequence: number;
+    Value: string;
+    Link: string;
+    FileName: string;
+    IsSupplied: boolean;
+    ShowFileContent: boolean;
+    Total: number;
+    ECLSchemas: ECLSchemas;
+}
+
+export interface Results {
+    ECLResult: ECLResult[];
+}
+
+export interface ECLTimer {
+    Name: string;
+    Value: string;
+    count: number;
+}
+
+export interface Timers {
+    ECLTimer: ECLTimer[];
+}
+
+export interface DebugValue {
+    Name: string;
+    Value: string;
+}
+
+export interface DebugValues {
+    DebugValue: DebugValue[];
+}
+
+export interface ApplicationValue {
+    Application: string;
+    Name: string;
+    Value: string;
+}
+
+export interface ApplicationValues {
+    ApplicationValue: ApplicationValue[];
+}
+
+export interface AllowedClusters {
+    AllowedCluster: string[];
+}
+
+export interface WorkunitBase {
     Wuid: string;
-    Query?: {
-        Text: string;
-    };
-    Cluster?: string;
-    DateTimeScheduled?: string;
-    HasArchiveQuery?: boolean;
-    IsPausing?: false;
-    Jobname?: string;
-    Owner?: string;
-    Protected?: boolean;
-    State?: string;
-    StateID?: WUStateID;
-    ThorLCR?: boolean;
-    TotalClusterTime?: string;
+    Owner: string;
+    Cluster: string;
+    Jobname: string;
+    StateID: WUStateID;
+    State: string;
+    Protected: boolean;
+    DateTimeScheduled: Date;
+    IsPausing: boolean;
+    ThorLCR: boolean;
+    ApplicationValues: ApplicationValues;
+    HasArchiveQuery: boolean;
 }
 
-export interface IWUQueryRequest {
+export interface ECLWorkunit extends WorkunitBase {
+    TotalClusterTime: string;
+}
+
+export function isECLWorkunit(_: ECLWorkunit | Workunit): _ is ECLWorkunit {
+    return (<ECLWorkunit>_).TotalClusterTime !== undefined;
+}
+
+export interface Workunit extends WorkunitBase {
+    StateEx: string;
+    ActionEx: string;
+    Description: string;
+    PriorityClass: number;
+    PriorityLevel: number;
+    Snapshot: string;
+    ResultLimit: number;
+    Archived: boolean;
+    EventSchedule: number;
+    HaveSubGraphTimings: boolean;
+    Query: Query;
+    Helpers: Helpers;
+    Results: Results;
+    Timers: Timers;
+    DebugValues: DebugValues;
+    AllowedClusters: AllowedClusters;
+    ErrorCount: number;
+    WarningCount: number;
+    InfoCount: number;
+    AlertCount: number;
+    GraphCount: number;
+    SourceFileCount: number;
+    ResultCount: number;
+    VariableCount: number;
+    TimerCount: number;
+    HasDebugValue: boolean;
+    ApplicationValueCount: number;
+    XmlParams: string;
+    AccessFlag: number;
+    ClusterFlag: number;
+    ResultViewCount: number;
+    ResourceURLCount: number;
+    DebugValueCount: number;
+    WorkflowCount: number;
+}
+
+export function isWorkunit(_: ECLWorkunit | Workunit): _ is Workunit {
+    return (<Workunit>_).StateEx !== undefined;
+}
+
+export interface WUInfoResponse {
+    Workunit: Workunit;
+    AutoRefresh: number;
+    CanCompile: boolean;
+    ThorSlaveIP?: any;
+    ResultViews: any[];
+    SecMethod?: any;
+}
+
+export interface ApplicationValue {
+    Application: string;
+    Name: string;
+    Value: string;
+}
+
+export interface ApplicationValues {
+    ApplicationValue: ApplicationValue[];
+}
+
+export interface Workunits {
+    ECLWorkunit: ECLWorkunit[];
+}
+
+export interface WUQueryRequest {
     Wuid?: string;
     Owner?: string;
     Jonname?: string;
 }
 
-export interface IWUQueryResponse {
-    CacheHint: number;
+export interface WUQueryResponse {
+    Type: string;
+    LogicalFileSearchType: string;
+    Count: number;
+    PageSize: number;
+    NextPage: number;
+    LastPage: number;
     NumWUs: number;
-    Workunits: {
-        ECLWorkunit: IECLWorkunit[];
-    };
+    First: boolean;
+    PageStartFrom: number;
+    PageEndAt: number;
+    Descending: boolean;
+    BasicQuery: string;
+    Filters: string;
+    CacheHint: number;
+    Workunits: Workunits;
 }
 
-export interface IWUCreateResponse {
-    Workunit: IECLWorkunit;
+export interface WUCreateResponse {
+    Workunit: Workunit;
 }
 
-export interface IWUUpdateRequest {
+export interface WUInfoRequest {
     Wuid: string;
+    TruncateEclTo64k?: boolean;
+    Type?: string;
+    IncludeExceptions?: boolean;
+    IncludeGraphs?: boolean;
+    IncludeSourceFiles?: boolean;
+    IncludeResults?: boolean;
+    IncludeResultsViewNames?: boolean;
+    IncludeVariables?: boolean;
+    IncludeTimers?: boolean;
+    IncludeDebugValues?: boolean;
+    IncludeApplicationValues?: boolean;
+    IncludeWorkflows?: boolean;
+    IncludeXmlSchemas?: boolean;
+    IncludeResourceURLs?: boolean;
+    SuppressResultSchemas?: boolean;
+    ThorSlaveIP?: string;
+}
+
+export interface WUListQueriesRequest {
+    QueryID: string;
+    QueryName: string;
+}
+
+export interface WUListQueriesResponse {
+}
+
+export interface WUUpdateRequest {
+    Wuid: string;
+    State?: string;
+    StateOrig?: string;
+    Jobname?: string;
+    JobnameOrig?: string;
     QueryText?: string;
     Action?: WUAction;
+    Description?: string;
+    DescriptionOrig?: string;
+    AddDrilldownFields?: boolean;
     ResultLimit?: number;
+    Protected?: boolean;
+    ProtectedOrig?: boolean;
+    PriorityClass?: string;
+    PriorityLevel?: string;
+    Scope?: string;
+    ScopeOrig?: string;
+    ClusterSelection?: string;
+    ClusterOrig?: string;
+    XmlParams?: string;
+    ThorSlaveIP?: string;
+    QueryMainDefinition?: string;
+    DebugValues?: any[];
+    ApplicationValues?: any[];
+}
+
+export interface WUPushEventRequest {
+    EventName: string;
+    EventText: string;
+}
+
+export interface WUPushEventResponse {
+}
+
+export interface WUUpdateResponse {
+    Workunit: Workunit;
+}
+
+export interface WUSubmitRequest {
+    Wuid: string;
+    Cluster: string;
+    Queue?: string;
+    Snapshot?: string;
+    MaxRunTime?: number;
+    BlockTillFinishTimer?: boolean;
+    SyntaxCheck?: boolean;
+    NotifyCluster?: boolean;
+}
+
+export interface WUSubmitResponse {
+}
+
+export interface WUResubmitRequest {
+    Wuids: string[];
+    ResetWorkflow: boolean;
+    CloneWorkunit: boolean;
+    BlockTillFinishTimer?: number;
+}
+
+export interface WU {
+    WUID: string;
+}
+
+export interface WUs {
+    WU: WU[];
+}
+
+export interface WUResubmitResponse {
+    WUs: WUs;
+}
+export interface WUQueryDetailsRequest {
+    QueryId: string;
+    QuerySet: string;
+    IncludeStateOnClusters: boolean;
+    IncludeSuperFiles: boolean;
+    IncludeWsEclAddresses: boolean;
+    CheckAllNodes: boolean;
+}
+
+export interface WUQueryDetailsResponse {
+    QueryId: string;
+    QuerySet: string;
+    QueryName: string;
+    Wuid: string;
+    Dll: string;
+    Suspended: boolean;
+    Activated: boolean;
+    SuspendedBy?: any;
+    PublishedBy?: any;
+    Comment: string;
+    LogicalFiles: any[];
+    IsLibrary: boolean;
+    Priority?: any;
+    WUSnapShot: string;
+    CompileTime: Date;
+    LibrariesUsed: any[];
+    CountGraphs: number;
+    GraphIds: any[];
+    ResourceURLCount: number;
+    WsEclAddresses: any[];
+}
+
+export type WUActionType = "SetToFailed" | "Pause" | "PauseNow" | "Resume" | "Abort" | "Delete" | "Restore" | "Deschedule" | "Reschedule";
+export interface WUActionRequest {
+    Wuids: string[];
+    WUActionType: WUActionType;
+    Cluster?: string;
+    Owner?: string;
+    State?: string;
+    StartDate?: string;
+    EndDate?: string;
+    ECL?: string;
+    Jobname?: string;
+    Test?: string;
+    CurrentPage?: number;
+    PageSize?: number;
+    Sortby?: number;
+    Descending?: boolean;
+    EventServer?: string;
+    EventName?: string;
+    PageFrom?: number;
+    BlockTillFinishTimer?: number;
+}
+
+export interface WUActionResult {
+    Wuid: string;
+    Action: string;
+    Result: string;
+}
+
+export interface ActionResults {
+    WUActionResult: WUActionResult[];
+}
+
+export interface WUActionResponse {
+    ActionResults: ActionResults;
+}
+
+export interface WUGetZAPInfoRequest {
+    WUID: string;
+}
+
+export interface WUGetZAPInfoResponse {
+    WUID: string;
+    ESPIPAddress: string;
+    ThorIPAddress?: any;
+    BuildVersion: string;
+    Archive?: any;
+}
+
+export interface WUShowScheduledRequest {
+    Cluster: string;
+    EventName: string;
+    PushEventName: string;
+    PushEventText: string;
+    State: string;
+}
+
+export interface WUShowScheduledResponse {
+}
+
+export interface WUQuerySetQueryActionRequest {
+    Action: string;
+    QuerySetName: string;
+    Queries: any[];
+}
+
+export interface Result {
+    QueryId: string;
+    Suspended: boolean;
+    Success: boolean;
+    Code?: any;
+    Message?: any;
+}
+
+export interface Results {
+    Result: Result[];
+}
+
+export interface WUQuerySetQueryActionResponse {
+    Action: string;
+    QuerySetName: string;
+    Results: Results;
+}
+
+export interface WUQuerySetAliasActionRequest {
+    Action: string;
+    QuerySetName: string;
+    Queries: any[];
+}
+
+export interface AliasResult {
+    Name?: any;
+    Success: boolean;
+    Code?: any;
+    Message?: any;
+}
+
+export interface AliasResults {
+    Result: AliasResult[];
+}
+
+export interface WUQuerySetAliasActionResponse {
+    Action: string;
+    QuerySetName: string;
+    Results: AliasResults;
+}
+
+export interface WUPublishWorkunitRequest {
+    Wuid: string;
+    Cluster: string;
+    JobName: string;
+    Activate: string;
+    NotifyCluster: boolean;
+    Wait: number;
+    NoReload: boolean;
+    UpdateWorkUnitName: boolean;
+    memoryLimit: string;
+    TimeLimit: string;
+    WarnTimeLimit: string;
+    Priority: string;
+    RemoteDali: string;
+    Comment: string;
+    DontCopyFiles: boolean;
+    SourceProcess: string;
+    AllowForeignFiles: boolean;
+    UpdateDfs: boolean;
+    UpdateSuperFiles: boolean;
+    UpdateCloneFrom: boolean;
+    AppendCluster: boolean;
+}
+
+export interface WUPublishWorkunitResponse {
+    Wuid: string;
+    Result?: any;
+    QuerySet: string;
+    QueryName: string;
+    QueryId: string;
+    ReloadFailed: boolean;
+    Suspended?: any;
+    ErrorMessage?: any;
+}
+
+export interface WUGetGraphRequest {
+    Wuid: string;
+    GraphName: string;
+    SubGraphId: string;
+}
+
+export interface ECLGraphEx {
+    Name: string;
+    Label: string;
+    Type: string;
+    Graph: string;
+    Complete: boolean;
+}
+
+export interface Graphs {
+    ECLGraphEx: ECLGraphEx[];
+}
+
+export interface WUGetGraphResponse {
+    Graphs: Graphs;
+}
+
+export interface WUResultRequest {
+    Wuid: string;
+    Sequence: string;
+    ResultName: string;
+    LogicalName: string;
+    Cluster: string;
+    SuppressXmlSchema: boolean;
+    BypassCachedResult: boolean;
+    FilterBy: any[];
+    Start: number;
+    Count: number;
+}
+
+export interface XmlSchema {
+    "@name": string;
+    xml: string;
+}
+
+export interface Result {
+    XmlSchema: XmlSchema;
+    "@xmlSchema": string;
+    Row: any[];
+}
+
+export interface WUResultResponse {
+    Wuid: string;
+    Sequence: number;
+    LogicalName?: any;
+    Cluster?: any;
+    Name: string;
+    Start: number;
+    Requested: number;
+    Count: number;
+    Total: number;
+    Result: Result;
+}
+
+export interface WUQueryGetGraphRequest {
+    Target: string;
+    QueryId: string;
+    GraphName: string;
+    SubGraphId: string;
+}
+
+export interface WUQueryGetGraphResponse {
+}
+
+export interface WUFileRequest {
+    Name: string;
+    Wuid: string;
+    Type: string;
+    Option: string;
+    SlaveIP: string;
+    IPAddress: string;
+    Description: string;
+    QuerySet: string;
+    Query: string;
+    Process: string;
+    ClusterGroup: string;
+    LogDate: string;
+    SlaveNumber: number;
+    SizeLimit: number;
+    PlainText: string;
+}
+
+export interface WUGetStatsRequest {
+    WUID: string;
+    CreatorType: string;
+    Creator: string;
+    ScopeType: string;
+    Scope: string;
+    Kind: string;
+    Measure: string;
+    MinScopeDepth: number;
+    MaxScopeDepth: number;
+    IncludeGraphs: boolean;
+    CreateDescriptionsboolean;
+    MinValue: number;
+    MaxValue: number;
+    Filter: string;
+}
+
+export interface WUStatisticItem {
+    Creator: string;
+    CreatorType: string;
+    Scope: string;
+    ScopeType: string;
+    TimeStamp: Date;
+    Measure: string;
+    Kind: string;
+    Value: any;
+    RawValue: any;
+    Wuid: string;
+    Max?: number;
+    Count?: number;
+    Description: string;
+}
+
+export interface Statistics {
+    WUStatisticItem: WUStatisticItem[];
+}
+
+export interface WUGetStatsResponse {
+    WUID: string;
+    Statistics: Statistics;
+}
+
+export interface WUCDebugRequest {
+    Wuid: string;
+    Command: string;
+}
+
+export interface WUCDebugResponse {
 }
 
 export class WsWorkunits extends ESPConnection {
@@ -92,33 +644,107 @@ export class WsWorkunits extends ESPConnection {
         super(`${href}/WsWorkunits`);
     }
 
-    WUQuery(request: IWUQueryRequest = {}): Promise<IECLWorkunit[]> {
-        return this.send("WUQuery", request).then((response: IWUQueryResponse) => {
-            if (response) {
-                if (response.__exceptions) {
-
-                }
-                if (response.Workunits && response.Workunits.ECLWorkunit) {
-                    return response.Workunits.ECLWorkunit;
-                }
-                throw (new Error("WUQuery:  Missing response"));
-            }
-        });
+    WUQuery(request: WUQueryRequest = {}): Promise<WUQueryResponse> {
+        return this.send("WUQuery", request);
     }
 
-    WUCreate(): Promise<IECLWorkunit> {
-        return this.send("WUCreate").then((response: IWUCreateResponse) => {
-            return response.Workunit;
-        });
+    WUInfo(_request: WUInfoRequest): Promise<WUInfoResponse> {
+        let request: WUInfoRequest = {
+            Wuid: "",
+            TruncateEclTo64k: true,
+            IncludeExceptions: false,
+            IncludeGraphs: false,
+            IncludeSourceFiles: false,
+            IncludeResults: false,
+            IncludeResultsViewNames: false,
+            IncludeVariables: false,
+            IncludeTimers: false,
+            IncludeDebugValues: false,
+            IncludeApplicationValues: false,
+            IncludeWorkflows: false,
+            IncludeXmlSchemas: false,
+            IncludeResourceURLs: false,
+            SuppressResultSchemas: true
+        };
+        mixin(request, _request);
+        return this.send("WUInfo", request);
     }
 
-    WUUpdate(request: IWUUpdateRequest): Promise<IECLWorkunit> {
-        return this.send("WUUpdate", request).then((response: IWUCreateResponse) => {
-            return response.Workunit;
-        });
+    WUCreate(): Promise<WUCreateResponse> {
+        return this.send("WUCreate");
     }
 
-    WUSubmit(wuid: string, cluster: string): Promise<null> {
-        return this.send("WUSubmit", { Wuid: wuid, Cluster: cluster });
+    WUUpdate(request: WUUpdateRequest): Promise<WUUpdateResponse> {
+        return this.send("WUUpdate", request);
+    }
+
+    WUSubmit(request: WUSubmitRequest): Promise<WUSubmitResponse> {
+        return this.send("WUSubmit", request);
+    }
+
+    WUResubmit(request: WUResubmitRequest): Promise<WUResubmitResponse> {
+        this.toESPStringArray(request, "Wuids");
+        return this.send("WUResubmit", request);
+    }
+
+    WUQueryDetails(request: WUQueryDetailsRequest): Promise<WUQueryDetailsResponse> {
+        return this.send("WUQueryDetails", request);
+    }
+
+    WUListQueries(request: WUListQueriesRequest): Promise<WUListQueriesResponse> {
+        return this.send("WUListQueries", request);
+    }
+
+    WUPushEvent(request: WUPushEventRequest): Promise<WUPushEventResponse> {
+        return this.send("WUPushEvent", request);
+    }
+
+    WUAction(request: WUActionRequest): Promise<WUActionResponse> {
+        this.toESPStringArray(request, "Wuids");
+        return this.send("WUAction", request);
+    }
+
+    WUGetZAPInfo(request: WUGetZAPInfoRequest): Promise<WUGetZAPInfoResponse> {
+        return this.send("WUGetZAPInfo", request);
+    }
+
+    WUShowScheduled(request: WUShowScheduledRequest): Promise<WUShowScheduledResponse> {
+        return this.send("WUShowScheduled", request);
+    }
+
+    WUQuerySetAliasAction(request: WUQuerySetAliasActionRequest): Promise<WUQuerySetAliasActionResponse> {
+        return this.send("WUQuerySetAliasAction", request);
+    }
+
+    WUQuerySetQueryAction(request: WUQuerySetQueryActionRequest): Promise<WUQuerySetQueryActionResponse> {
+        return this.send("WUQuerySetQueryAction", request);
+    }
+
+    WUPublishWorkunit(request: WUPublishWorkunitRequest): Promise<WUPublishWorkunitResponse> {
+        return this.send("WUPublishWorkunit", request);
+    }
+
+    WUGetGraph(request: WUGetGraphRequest): Promise<WUGetGraphResponse> {
+        return this.send("WUGetGraph", request);
+    }
+
+    WUResult(request: WUResultRequest): Promise<WUResultResponse> {
+        return this.send("WUResult", request);
+    }
+
+    WUQueryGetGraph(request: WUQueryGetGraphRequest): Promise<WUQueryGetGraphResponse> {
+        return this.send("WUQueryGetGraph", request);
+    }
+
+    WUFile(request: WUFileRequest): Promise<string> {
+        return this.send("WUFile", request, ResponseType.TEXT);
+    }
+
+    WUGetStats(request: WUGetStatsRequest): Promise<WUGetStatsResponse> {
+        return this.send("WUGetStats", request);
+    }
+
+    WUCDebug(request: WUCDebugRequest): Promise<WUCDebugResponse> {
+        return this.send("WUCDebug", request);
     }
 }

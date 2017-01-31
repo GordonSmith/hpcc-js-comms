@@ -12,7 +12,9 @@ export default {
             main: true
         }),
         commonjs({
-            namedExports: { 'es6-promise': ["Promise"] }
+            namedExports: {
+                'es6-promise': ["Promise"]
+            }
         })
     ]
 };

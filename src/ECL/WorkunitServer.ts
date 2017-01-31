@@ -1,39 +1,41 @@
 import { Promise } from "es6-promise";
-import { IWUQueryRequest, WsWorkunits } from "../connections/WsWorkunits";
+import { WsWorkunits, WUQueryRequest } from "../connections/WsWorkunits";
 import { Workunit } from "./Workunit";
 
 let wuServers: { [key: string]: Server } = {};
 export class Server {
 
-    static attach(host: string): Server {
-        if (!wuServers[host]) {
-            wuServers[host] = new Server(host);
+    static attach(href: string): Server {
+        if (!wuServers[href]) {
+            wuServers[href] = new Server(href);
         }
-        return wuServers[host];
+        return wuServers[href];
     }
 
+    href: string;
     connection: WsWorkunits;
 
-    protected constructor(host: string) {
-        this.connection = new WsWorkunits(host);
+    protected constructor(href: string = "") {
+        this.href = href;
+        this.connection = new WsWorkunits(href);
     }
 
     create(): Promise<Workunit> {
         return this.connection.WUCreate().then((response) => {
-            return Workunit.attach(this.connection, response.Wuid).updateState(response);
+            return Workunit.attach(this.href, response.Workunit.Wuid, response.Workunit);
         });
     }
 
-    get(wuid: string): Promise<Workunit> {
+    get(wuid: string): Promise<Workunit | null> {
         return this.query({ Wuid: wuid }).then((wus) => {
-            return wus.length ? wus[0] : void 0;
+            return wus.length ? wus[0] : null;
         });
     }
 
-    query(request: IWUQueryRequest = {}): Promise<Workunit[]> {
+    query(request: WUQueryRequest = {}): Promise<Workunit[]> {
         return this.connection.WUQuery(request).then((response) => {
-            return response.map((eclWorkunit) => {
-                return Workunit.attach(this.connection, eclWorkunit.Wuid).updateState(eclWorkunit);
+            return response.Workunits.ECLWorkunit.map((eclWorkunit) => {
+                return Workunit.attach(this.href, eclWorkunit.Wuid, eclWorkunit);
             });
         });
     }

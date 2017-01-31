@@ -15,7 +15,7 @@
     "transpile-dev-watch": "tsc -w -p .",
     "transpile-es2015": "tsc -p ./tsconfig-es2015.json",
     "transpile-es2015-watch": "tsc -w -p ./tsconfig-es2015.json",
-    "rollup-dev": "rollup -c",
+    "rollup-dev": "npm run transpile-es2015 && rollup -c",
     "rollup-dev-watch": "rollup --watch -c",
     "build-dev-watch": "npm run transpile-es2015 && concurrently --kill-others \"npm run transpile-es2015-watch\" \"npm run rollup-dev-watch\"",
     "transpile-umd": "tsc -p ./tsconfig-umd.json",
@@ -29,12 +29,14 @@
     "es6-promise": "~4.0.5",
     "d3-request": "~1.0.3",
     "tslib": "~1.5.0",
-    "xmlhttprequest": "GordonSmith/node-XMLHttpRequest#patch-1"
+    "xmlhttprequest": "GordonSmith/node-XMLHttpRequest#patch-1",
+    "js-logging": "~0.1.0"
   },
   "devDependencies": {
     "@types/chai": "~3.4.34",
     "@types/d3-request": "~1.0.1",
     "@types/mocha": "~2.2.37",
+    "@types/js-logging": "~4.3.1",
     "chai": "~3.5.0",
     "concurrently": "^3.1.0",
     "mocha": "~3.2.0",

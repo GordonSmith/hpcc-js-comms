@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { Promise } from "es6-promise";
+import { WsWorkunits } from "../src/connections/WsWorkunits";
 import { Workunit, WUStateID } from "../src/ECL/Workunit";
 import { Server } from "../src/ECL/WorkunitServer";
 
@@ -12,6 +13,7 @@ const VM_HOST: string = "http://192.168.3.22:8010";
 let server: Server = Server.attach(VM_HOST);
 export function createSubmit(): Promise<Workunit> {
     return server.create().then((wu) => {
+        expect(wu).is.not.undefined;
         expect(wu.wuid).is.not.undefined;
         wu.on("StateIDChanged.logger", (stateID: WUStateID) => {
             console.log(wu.wuid + "-" + wu.state);
@@ -23,17 +25,19 @@ export function createSubmit(): Promise<Workunit> {
         expect(wu.ecl()).equals(testECL);
         return wu.submit("hthor");
     }).then((wu) => {
-        return new Promise((resolve, reject) => {
+        return new Promise<Workunit>((resolve, reject) => {
             if (wu.isComplete()) {
-                resolve(true);
+                resolve(wu);
             } else {
                 wu.on("StateIDChanged", (stateID: WUStateID) => {
                     if (wu.isComplete()) {
-                        resolve();
+                        resolve(wu);
                     }
                 });
             }
         });
+    }).then((wu) => {
+        return wu.delete();
     });
 };
 
@@ -44,7 +48,23 @@ export function failedWUQuery() {
 }
 
 export function all() {
-    return Promise.all([/*createSubmit(), */failedWUQuery()]);
+    let wu = Workunit.attach("http://192.168.3.22:8010", "W20170131-082913");
+    return wu.WUQuery().then((_wu) => {
+        let isComplete = _wu.isComplete();
+        return wu.WUInfo();
+    }).then((_wu) => {
+        let isComplete = _wu.isComplete();
+        return _wu;
+    });
+
+    //return createSubmit();
+    /*
+    let tmp = new WsWorkunits("http://192.168.3.22:8010");
+    return tmp.WUQuery().then((response) => {
+        let d = response;
+    });
+    */
+    // return Promise.all([/*createSubmit(), */failedWUQuery()]);
 }
 
 /*
@@ -211,4 +231,3 @@ NewChilds := NORMALIZE(DeNormedRecs,LEFT.NumRows,NewChildren(LEFT,COUNTER));
 
 OUTPUT(NewChilds,NAMED('ChildrenExtracted'));
 `;
-

@@ -1,6 +1,7 @@
 import { dispatch } from "d3-dispatch";
 import { request } from "d3-request";
 import { Promise } from "es6-promise";
+import { logger } from "../Util/Logging";
 
 const os = {
     EOL: "\n"
@@ -79,48 +80,5 @@ export class Connection {
 
     send(href: string, form: any = {}): Promise<any> {
         return this.transmit(this.defaultMode, href, form);
-    }
-}
-
-export class ESPConnection extends Connection {
-    readonly href: string;
-
-    constructor(href: string) {
-        super();
-        this.href = href;
-    }
-
-    protected transmit(verb: VERB, action: string, form: any): Promise<any> {
-        return super.transmit(verb, this.href + "/" + action + ".json", form).then((response) => {
-            let body: any;
-            try {
-                body = JSON.parse(response);
-            } catch (e) {
-                throw new ConnectionError("Invalid JSON", response);
-            }
-            let exceptions: any | null = null;
-            let content: any | null = null;
-
-            for (let key in body) {
-                if (body.hasOwnProperty(key)) {
-                    switch (key) {
-                        case "Exceptions":
-                            exceptions = body[key];
-                            break;
-                        default:
-                            if (content) {
-                                throw new ConnectionError("ESP:  Two Responses", body);
-                            }
-                            content = body[key];
-                            break;
-                    }
-                }
-            }
-            content = content || {};
-            if (exceptions) {
-                content.__exceptions = exceptions;
-            }
-            return content;
-        });
     }
 }
