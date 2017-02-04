@@ -2,7 +2,7 @@ import { Promise } from "es6-promise";
 import { logger } from "../Util/Logging";
 import { Connection, ConnectionError, VERB } from "./Connection";
 
-export function inner(prop: string, obj: Object): any {
+export function inner(prop: string, obj: any): any {
     if (prop === void 0 || obj === void 0) return void 0;
     for (let item of prop.split(".")) {
         if (obj[item] === undefined) {
@@ -36,7 +36,7 @@ export function mixin(target: any, ...args: any[]) {
     return to;
 };
 
-export function isArray(arg) {
+export function isArray(arg: any) {
     return Object.prototype.toString.call(arg) === "[object Array]";
 };
 
@@ -137,7 +137,7 @@ export class ESPConnection extends Connection {
         return this.transmit(this.defaultMode, href, form, responseType);
     }
 
-    toESPStringArray(target: Object, arrayName: string): Object {
+    toESPStringArray(target: any, arrayName: string): Object {
         if (isArray(target[arrayName])) {
             for (let i = 0; i < target[arrayName].length; ++i) {
                 target[arrayName + "_i" + i] = target[arrayName][i];

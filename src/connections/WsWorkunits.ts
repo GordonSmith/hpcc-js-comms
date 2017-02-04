@@ -600,7 +600,7 @@ export interface WUGetStatsRequest {
     MinScopeDepth: number;
     MaxScopeDepth: number;
     IncludeGraphs: boolean;
-    CreateDescriptionsboolean;
+    CreateDescriptions: boolean;
     MinValue: number;
     MaxValue: number;
     Filter: string;
