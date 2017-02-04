@@ -12,6 +12,12 @@ export type Partial<T> = {
     [P in keyof T]?: T[P];
 };
 
+export interface IChangedProperty {
+    id: string;
+    oldValue: any;
+    newValue: any;
+}
+
 export class Workunit {
     connection: WsWorkunits;
     topologyConnection: WsTopology;
@@ -19,12 +25,13 @@ export class Workunit {
     private _espWorkunitCache: string[] = [];
     private _espWorkunitCacheID: number = 0;
     private _submitAction: WUAction;
-    private _events = dispatch<Workunit>("StateIDChanged", "changed", "completed");
+    private _events = dispatch("StateIDChanged", "changed", "completed");
     private _monitorHandle: any;
     private _hasListener: boolean;
     private _monitorTickCount: number = 0;
 
     //  Accessors  ---
+    get properties(): ECLWorkunit & WsWorkunit { return this._espWorkunit; }
     get Wuid(): string { return this._espWorkunit.Wuid; }
     get Owner(): string { return this._espWorkunit.Owner; }
     get Cluster(): string { return this._espWorkunit.Cluster; }
@@ -44,7 +51,7 @@ export class Workunit {
         }
         let retVal = _workunits[wuid];
         if (state) {
-            retVal._updateState(state);
+            retVal._updateProperties(state);
         }
         return retVal;
     }
@@ -56,7 +63,7 @@ export class Workunit {
         this.clearState(wuid);
     }
 
-    clearState(wuid) {
+    clearState(wuid: string) {
         this._espWorkunit = <ECLWorkunit & WsWorkunit>{
             Wuid: wuid,
             StateID: WUStateID.Unknown
@@ -68,12 +75,12 @@ export class Workunit {
         return this.connection.WUCreate().then((response) => {
             _workunits[response.Workunit.Wuid] = this;
             this._espWorkunit.Wuid = response.Workunit.Wuid;
-            this._updateState(response.Workunit);
+            this._updateProperties(response.Workunit);
             return this;
         });
     }
 
-    update(request: Partial<WUUpdateRequest>, appData?, debugData?) {
+    update(request: Partial<WUUpdateRequest>, appData?: any, debugData?: any) {
         return this.connection.WUUpdate(mixin({}, request, {
             Wuid: this.Wuid,
             StateOrig: this._espWorkunit.State,
@@ -84,7 +91,7 @@ export class Workunit {
             ApplicationValues: appData,
             DebugValues: debugData
         })).then((response) => {
-            this._updateState(response.Workunit);
+            this._updateProperties(response.Workunit);
             return this;
         });
     }
@@ -105,7 +112,7 @@ export class Workunit {
                 Action: action,
                 ResultLimit: resultLimit
             }).then((response) => {
-                this._updateState(response.Workunit);
+                this._updateProperties(response.Workunit);
                 this._submitAction = action;
                 return this.connection.WUSubmit({ Wuid: this.Wuid, Cluster: cluster }).then(() => {
                     return this;
@@ -190,7 +197,7 @@ export class Workunit {
 
     protected WUQuery(_request?: Partial<WUQueryRequest>): Promise<WUQueryResponse> {
         return this.connection.WUQuery(mixin({}, _request, { Wuid: this.Wuid })).then((response) => {
-            this._updateState(response.Workunits.ECLWorkunit[0]);
+            this._updateProperties(response.Workunits.ECLWorkunit[0]);
             return response;
         }).catch((e: ESPExceptions) => {
             //  deleted  ---
@@ -211,7 +218,7 @@ export class Workunit {
 
     protected WUInfo(_request?: Partial<WUInfoRequest>): Promise<WUInfoResponse> {
         return this.connection.WUInfo(mixin({}, _request, { Wuid: this.Wuid })).then((response) => {
-            this._updateState(response.Workunit);
+            this._updateProperties(response.Workunit);
             return response;
         }).catch((e: ESPExceptions) => {
             //  deleted  ---
@@ -256,21 +263,22 @@ export class Workunit {
         });
     }
 
-    protected _updateState(_: WsWorkunit | ECLWorkunit): Workunit {
-        let changed: any[] = [];
+    protected _updateProperties(_: WsWorkunit | ECLWorkunit): Workunit {
+        let changed: IChangedProperty[] = [];
         let prevIsComplete = this.isComplete();
         for (let key in _) {
-            if (_[key] !== undefined || _[key] !== null) {
-                let jsonStr = JSON.stringify(_[key]);
+            let val = (<any>_)[key];
+            if (val !== undefined || val !== null) {
+                let jsonStr = JSON.stringify(val);
                 if (this._espWorkunitCache[key] !== jsonStr) {
                     this._espWorkunitCache[key] = jsonStr;
-                    let changedInfo = {
-                        key,
-                        oldVal: this._espWorkunit[key],
-                        newVal: _[key]
+                    let changedInfo: IChangedProperty = {
+                        id: key,
+                        oldValue: this._espWorkunit[key],
+                        newValue: _[key]
                     };
                     changed.push(changedInfo);
-                    this._espWorkunit[key] = changedInfo.newVal;
+                    this._espWorkunit[key] = changedInfo.newValue;
                 }
             }
         }
@@ -278,8 +286,8 @@ export class Workunit {
             if (idx === 0) {
                 ++this._espWorkunitCacheID;
             }
-            if (changedInfo.key === "StateID") {
-                this._events.call(changedInfo.key + "Changed", this, changedInfo.newVal, changedInfo.oldVal);
+            if (changedInfo.id === "StateID") {
+                this._events.call(changedInfo.id + "Changed", this, changedInfo.newValue, changedInfo.oldValue);
             }
             if (changed.length === idx + 1) {
                 this._events.call("changed", this, changed);
@@ -298,7 +306,7 @@ export class Workunit {
         }
 
         this._monitorHandle = setTimeout(() => {
-            let refreshPromise: Promise<any> = this._hasListener ? this.WUQuery() : Promise.resolve(null);
+            let refreshPromise: Promise<any> = this._hasListener ? this.WUInfo() : Promise.resolve(null);
             refreshPromise.then(() => {
                 this._monitor();
             });
@@ -323,7 +331,10 @@ export class Workunit {
     }
 
     //  Events  ---
-    on(id: string, callback): Workunit {
+    on(id: string, callback: Function): Workunit {
+        if (callback && this._events.on(id)) {
+            logger.warning(`Event already registered:  ${id}`);
+        }
         this._events.on(id, callback);
         this._hasListener = false;
         for (let key in this._events) {

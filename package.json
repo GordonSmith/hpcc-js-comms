@@ -21,7 +21,7 @@
     "transpile-umd": "tsc -p ./tsconfig-umd.json",
     "build-bundle": "npm run transpile-es2015 && node build-rollup.js",
     "build": "npm run transpile-umd && npm run build-bundle",
-    "prepublish": "npm run build",
+    "prepublishXXX": "npm run build",
     "test": "npm run transpile-dev && mocha lib/test/runner-mocha.js",
     "doc": "typedoc --out ./docx/ --tsconfig ./tsconfig.json --exclude node_modules --excludeNotExported --ignoreCompilerErrors src"
   },
@@ -29,14 +29,13 @@
     "es6-promise": "~4.0.5",
     "d3-request": "~1.0.3",
     "tslib": "~1.5.0",
-    "xmlhttprequest": "GordonSmith/node-XMLHttpRequest#patch-1",
-    "js-logging": "~0.1.0"
+    "xmlhttprequest": "GordonSmith/node-XMLHttpRequest#patch-1"
   },
   "devDependencies": {
     "@types/chai": "~3.4.34",
     "@types/d3-request": "~1.0.1",
     "@types/mocha": "~2.2.37",
-    "@types/js-logging": "~4.3.1",
+    "awesome-typescript-loader": "~3.0.0-beta.18",
     "chai": "~3.5.0",
     "concurrently": "^3.1.0",
     "mocha": "~3.2.0",
@@ -46,8 +45,12 @@
     "rollup-plugin-node-resolve": "^2.0.0",
     "rollup-plugin-uglify": "^1.0.1",
     "rollup-watch": "~3.2.2",
+    "source-map-loader": "~0.1.6",
     "tslint": "~4.3.1",
     "typedoc": "^0.5.5",
-    "typescript": "^2.1.4"
+    "typescript": "^2.1.5",
+    "webpack": "^2.2.1",
+    "es6-weak-map": "~2.0.1",
+    "webpack-node-externals": "~1.5.4"
   }
 }

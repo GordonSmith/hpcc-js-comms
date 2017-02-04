@@ -3,6 +3,9 @@ import { Promise } from "es6-promise";
 import { WsWorkunits } from "../src/connections/WsWorkunits";
 import { Workunit, WUStateID } from "../src/ECL/Workunit";
 import { Server } from "../src/ECL/WorkunitServer";
+import * as O from "../src/Util/Observable";
+
+
 
 declare var process: any;
 
@@ -11,35 +14,37 @@ const VM_HOST: string = "http://192.168.3.22:8010";
 // const PUBLIC_URL: string = "http://52.51.90.23:8010/WsWorkunits";
 
 let server: Server = Server.attach(VM_HOST);
+/*
 export function createSubmit(): Promise<Workunit> {
-    return server.create().then((wu) => {
-        expect(wu).is.not.undefined;
-        expect(wu.wuid).is.not.undefined;
-        wu.on("StateIDChanged.logger", (stateID: WUStateID) => {
-            console.log(wu.wuid + "-" + wu.state);
-        });
-        return wu;
-    }).then((wu) => {
-        return wu.ecl(testECL);
-    }).then((wu) => {
-        expect(wu.ecl()).equals(testECL);
-        return wu.submit("hthor");
-    }).then((wu) => {
-        return new Promise<Workunit>((resolve, reject) => {
-            if (wu.isComplete()) {
-                resolve(wu);
-            } else {
-                wu.on("StateIDChanged", (stateID: WUStateID) => {
-                    if (wu.isComplete()) {
-                        resolve(wu);
-                    }
-                });
-            }
-        });
-    }).then((wu) => {
-        return wu.delete();
+return server.create().then((wu) => {
+    expect(wu).is.not.undefined;
+    expect(wu.wuid).is.not.undefined;
+    wu.on("StateIDChanged.logger", (stateID: WUStateID) => {
+        console.log(wu.wuid + "-" + wu.state);
     });
+    return wu;
+}).then((wu) => {
+    return wu.ecl(testECL);
+}).then((wu) => {
+    expect(wu.ecl()).equals(testECL);
+    return wu.submit("hthor");
+}).then((wu) => {
+    return new Promise<Workunit>((resolve, reject) => {
+        if (wu.isComplete()) {
+            resolve(wu);
+        } else {
+            wu.on("StateIDChanged", (stateID: WUStateID) => {
+                if (wu.isComplete()) {
+                    resolve(wu);
+                }
+            });
+        }
+    });
+}).then((wu) => {
+    return wu.delete();
+});
 };
+*/
 
 export function failedWUQuery() {
     return server.get("WXXX-YYY").then((wu) => {
@@ -47,16 +52,41 @@ export function failedWUQuery() {
     });
 }
 
+class Test implements O.IObserver {
+    update(eventID: string, message: any) {
+        console.log(`${eventID}:  ${message}`);
+    }
+}
 export function all() {
-    let wu = Workunit.attach("http://192.168.3.22:8010", "W20170131-082913");
-    return wu.WUQuery().then((_wu) => {
+    let x = new O.Observable("aaa", "bbb");
+    let y = new Test();
+    let x2 = x.toString();
+    let y2 = y.toString();
+
+    x.register("aaa", y);
+    x.notify("aaa", "1");
+    x.notify("bbb", "2");
+    x.register("bbb", y);
+    x.notify("bbb", "3");
+    x.notify("aaa", "4");
+    x.unregister("bbb", y);
+    x.notify("bbb", "5");
+    x.notify("aaa", "6");
+    x.unregister("aaa", y);
+    x.notify("bbb", "7");
+    x.notify("aaa", "8");
+
+    return Promise.resolve(true);
+    /*
+    let wu = Workunit.attach("http://192.168.3.22:8010", "W20170201-220130");
+    return wu.refresh().then((_wu) => {
         let isComplete = _wu.isComplete();
-        return wu.WUInfo();
+        return _wu;
     }).then((_wu) => {
         let isComplete = _wu.isComplete();
         return _wu;
     });
-
+    */
     //return createSubmit();
     /*
     let tmp = new WsWorkunits("http://192.168.3.22:8010");

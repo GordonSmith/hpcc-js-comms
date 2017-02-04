@@ -3,17 +3,18 @@
         "target": "es5",
         "rootDir": ".",
         "outDir": "./dist-dev",
-        "module": "umd",
-        "moduleResolution": "node",
-        "importHelpers": true,
-        "strictNullChecks": true,
-        "experimentalDecorators": true,
-        "emitDecoratorMetadata": false,
+        //"moduleResolution": "node",
+        //"importHelpers": true,
+        //"strictNullChecks": true,
+        //"experimentalDecorators": true,
+        //"emitDecoratorMetadata": false,
+        "noImplicitAny": false,
+        "suppressImplicitAnyIndexErrors": true,
         "sourceMap": true,
-        "allowJs": true,
+        //"allowJs": true,
         "lib": [
             "dom",
-            "es5"
+            "es6"
         ]
     },
     "include": [
