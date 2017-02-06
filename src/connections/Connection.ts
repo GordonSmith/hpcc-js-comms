@@ -1,6 +1,6 @@
-import { EventTarget } from "../util/EventTarget";
 import { request } from "d3-request";
 import { Promise } from "es6-promise";
+import { EventTarget } from "../util/EventTarget";
 import { logger } from "../util/Logging";
 
 const os = {

@@ -12,35 +12,40 @@
   "jsnext:main": "dist/src/index.js",
   "scripts": {
     "tsc-es2015": "tsc -p .",
-    "webpack": "cross-env webpack",
+    "webpack": "webpack",
     "webpack-min": "cross-env NODE_ENV=min webpack",
     "webpack-min-debug": "cross-env NODE_ENV=min-debug webpack",
     "build": "npm run tsc-es2015 && npm run webpack && npm run webpack-min",
     "watch": "cross-env NODE_ENV=watch webpack",
-    "test": "tsc -p ./test && mocha ./dist-test/test/index.js",
-    "prepublish": "npm run test && npm run build",
+    "lint": "tslint ./src/**/*",
+    "test": "npm run lint && mocha ./dist-test/test/index.js",
+    "prepublish": "npm run build",
     "doc": "typedoc --out ./docx/ --tsconfig ./tsconfig.json --exclude node_modules --excludeNotExported --ignoreCompilerErrors src"
   },
   "dependencies": {
     "es6-promise": "~4.0.5",
-    "d3-request": "~1.0.3",
-    "tslib": "~1.5.0",
-    "xmlhttprequest": "GordonSmith/node-XMLHttpRequest#patch-1"
+    "d3-request": "~1.0.3"
   },
   "devDependencies": {
     "@types/chai": "~3.4.34",
-    "@types/d3-request": "~1.0.1",
-    "@types/mocha": "~2.2.37",
+    "@types/mocha": "~2.2.39",
     "awesome-typescript-loader": "~3.0.0-beta.18",
-    "chai": "~3.5.0",
     "cross-env": "~3.1.4",
+    "chai": "~3.5.0",
     "mocha": "~3.2.0",
-    "requirejs": "~2.3.2",
-    "source-map-loader": "~0.1.6",
-    "tslint": "~4.3.1",
     "typedoc": "~0.5.5",
     "typescript": "~2.1.5",
     "webpack": "^2.2.1",
     "webpack-node-externals": "~1.5.4"
+  },
+  "devDependenciesXXX": {
+    "@types/chai": "~3.4.34",
+    "@types/d3-request": "~1.0.1",
+    "tslib": "~1.5.0",
+    "xmlhttprequest": "GordonSmith/node-XMLHttpRequest#patch-1",
+    "requirejs": "~2.3.2",
+    "source-map-loader": "~0.1.6",
+    "tslint": "~4.3.1",
+    "typedoc": "~0.5.5"
   }
 }

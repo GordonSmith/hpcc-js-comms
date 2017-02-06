@@ -17,7 +17,7 @@ export class EventTarget<T extends string> {
     removeEventListener(eventID: T, callback) {
         let eventObservers = this._eventObservers[eventID];
         if (eventObservers) {
-            for (var i = eventObservers.length - 1; i >= 0; --i) {
+            for (let i = eventObservers.length - 1; i >= 0; --i) {
                 if (eventObservers[i] === callback) {
                     eventObservers.splice(i, 1);
                 }
@@ -46,10 +46,10 @@ export class EventTarget<T extends string> {
         return false;
     }
 
-    hasEventListener(eventID?: string): boolean {
-        if (eventID !== void 0) {
-            return this._hasEventListener(eventID)
-        };
+    hasEventListener(_eventID?: string): boolean {
+        if (_eventID !== void 0) {
+            return this._hasEventListener(_eventID);
+        }
         for (let eventID in this._eventObservers) {
             if (this._hasEventListener(eventID)) {
                 return true;
@@ -59,13 +59,12 @@ export class EventTarget<T extends string> {
     }
 }
 
-
 declare function expect(...args);
 export function unitTest() {
     describe("EventTarget", function () {
         it("basic", function () {
             function echoEvent(...args: any[]) {
-                console.log(JSON.stringify(args));
+                // console.log(JSON.stringify(args));
             }
             let et = new EventTarget("aaa", "bbb", "zzz");
             expect(et.hasEventListener()).is.false;

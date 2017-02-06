@@ -1,8 +1,8 @@
-import { EventTarget } from "../util/EventTarget";
 import { Promise } from "es6-promise";
 import { ESPExceptions, exists, mixin } from "../connections/ESPConnection";
 import { WsTopology } from "../connections/WsTopology";
 import { ECLWorkunit, isECLWorkunit, Workunit as WsWorkunit, WorkunitBase, WsWorkunits, WUAction, WUActionRequest, WUActionResponse, WUActionType, WUInfoRequest, WUInfoResponse, WUQueryRequest, WUQueryResponse, WUResubmitResponse, WUStateID, WUUpdateRequest } from "../connections/WsWorkunits";
+import { EventTarget } from "../util/EventTarget";
 import { logger } from "../util/Logging";
 export { WUStateID }
 
@@ -25,7 +25,7 @@ export class Workunit {
     private _espWorkunitCache: string[] = [];
     private _espWorkunitCacheID: number = 0;
     private _submitAction: WUAction;
-    private _events = new EventTarget();//"StateIDChanged", "changed", "completed");
+    private _events = new EventTarget(); // "StateIDChanged", "changed", "completed");
     private _monitorHandle: any;
     private _monitorTickCount: number = 0;
 
@@ -267,18 +267,20 @@ export class Workunit {
         let changed: IChangedProperty[] = [];
         let prevIsComplete = this.isComplete();
         for (let key in _) {
-            let val = (<any>_)[key];
-            if (val !== undefined || val !== null) {
-                let jsonStr = JSON.stringify(val);
-                if (this._espWorkunitCache[key] !== jsonStr) {
-                    this._espWorkunitCache[key] = jsonStr;
-                    let changedInfo: IChangedProperty = {
-                        id: key,
-                        oldValue: this._espWorkunit[key],
-                        newValue: _[key]
-                    };
-                    changed.push(changedInfo);
-                    this._espWorkunit[key] = changedInfo.newValue;
+            if (_.hasOwnProperty(key)) {
+                let val = (<any>_)[key];
+                if (val !== undefined || val !== null) {
+                    let jsonStr = JSON.stringify(val);
+                    if (this._espWorkunitCache[key] !== jsonStr) {
+                        this._espWorkunitCache[key] = jsonStr;
+                        let changedInfo: IChangedProperty = {
+                            id: key,
+                            oldValue: this._espWorkunit[key],
+                            newValue: _[key]
+                        };
+                        changed.push(changedInfo);
+                        this._espWorkunit[key] = changedInfo.newValue;
+                    }
                 }
             }
         }
@@ -369,7 +371,7 @@ export function unitTest() {
         let wu1: Workunit;
         describe("simple life cycle", function () {
             it("creation", function () {
-                return Workunit.create(VM_HOST).then(wu => {
+                return Workunit.create(VM_HOST).then((wu) => {
                     expect(wu).is.not.undefined;
                     expect(wu.Wuid).is.not.undefined;
                     wu1 = wu;
