@@ -8,12 +8,23 @@
     <link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
 
     <!-- -->
-    <script src="../dist-dev/bundle.js"></script>
+    <script src="../node_modules/requirejs/require.js"></script>
     <script>
-        var testMode = "IIFE";
+        requirejs.config({
+            baseUrl: '.',
+            paths: {
+                "es6-promise": "../node_modules/es6-promise/dist/es6-promise",
+                "d3-request": "../node_modules/d3-request/build/d3-request",
+                "d3-collection": "../node_modules/d3-collection/build/d3-collection",
+                "d3-dispatch": "../node_modules/d3-dispatch/build/d3-dispatch",
+                "d3-dsv": "../node_modules/d3-dsv/build/d3-dsv",
+                "mocha": "../node_modules/mocha/mocha",
+                "chai": "../node_modules/chai/chai"
+            }
+        });
+        var testMode = "DEV";
     </script>
-
-<!-- DEV
+    <!-- DEV
     <script src="../node_modules/requirejs/require.js"></script>
     <script>
         requirejs.config({
@@ -33,13 +44,13 @@
         var testMode = "DEV";
     </script>
 -->
-<!-- BUNDLE
+    <!-- BUNDLE
     <script src="https://rawgit.com/jrburke/requirejs/2.2.0/require.js"></script>
     <script>
         var testMode = "BUNDLE";
     </script>
 -->
-<!-- IIFE
+    <!-- IIFE
     <script src="../dist/hpcc-platform-comms.js"></script>
     <script>
         var testMode = "IIFE";
@@ -55,9 +66,11 @@
         const espUrl = "http://" + serverIP + ":8010/WsWorkunits";
         switch (testMode) {
             case "DEV":
-                require(["mocha", "chai"], function () {
+                require(["mocha", "chai", "../dist/hpcc-platform-comms"], function (x, y, HPCCPlatformComms) {
                     mocha.setup('bdd');
-                    require(["../dist-dev/test/runner-mocha"], function () {
+                    //HPCCPlatformComms.Workunit.unitTest();
+                    require(["../dist-test/src/ECL/Workunit"], function (Workunit) {
+                        Workunit.unitTest();
                         mocha.run();
                     });
                 });

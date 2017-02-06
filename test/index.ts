@@ -3,7 +3,7 @@ import { unitTest as utLogging } from "../src/util/Logging";
 import { unitTest as utWorkunit } from "../src/ECL/Workunit";
 
 import { expect } from "chai";
-global["expect"] = expect;
+(global || window)["expect"] = expect;
 
 utEventTarget();
 utLogging();
