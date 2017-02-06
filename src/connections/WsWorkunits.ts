@@ -649,7 +649,7 @@ export class WsWorkunits extends ESPConnection {
     }
 
     WUInfo(_request: WUInfoRequest): Promise<WUInfoResponse> {
-        let request: WUInfoRequest = {
+        const request: WUInfoRequest = {
             Wuid: "",
             TruncateEclTo64k: true,
             IncludeExceptions: false,

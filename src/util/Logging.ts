@@ -13,8 +13,8 @@ export enum Level {
 
 export class Logging {
     log(level: Level, msg: string) {
-        let d = new Date();
-        let n = d.toISOString();
+        const d = new Date();
+        const n = d.toISOString();
         // tslint:disable-next-line:no-console
         console.log(`${n} <${Level[level]}>:  ${msg}`);
     }

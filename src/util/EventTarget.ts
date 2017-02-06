@@ -15,7 +15,7 @@ export class EventTarget<T extends string> {
     }
 
     removeEventListener(eventID: T, callback) {
-        let eventObservers = this._eventObservers[eventID];
+        const eventObservers = this._eventObservers[eventID];
         if (eventObservers) {
             for (let i = eventObservers.length - 1; i >= 0; --i) {
                 if (eventObservers[i] === callback) {
@@ -27,9 +27,9 @@ export class EventTarget<T extends string> {
     }
 
     dispatchEvent(eventID: T, ...args) {
-        let eventObservers = this._eventObservers[eventID];
+        const eventObservers = this._eventObservers[eventID];
         if (eventObservers) {
-            for (let observer of eventObservers) {
+            for (const observer of eventObservers) {
                 observer(args);
             }
         }
@@ -37,8 +37,8 @@ export class EventTarget<T extends string> {
     }
 
     private _hasEventListener(eventID: string): boolean {
-        let eventObservers = this._eventObservers[eventID];
-        for (let observer in eventObservers) {
+        const eventObservers = this._eventObservers[eventID];
+        for (const observer in eventObservers) {
             if (eventObservers[observer]) {
                 return true;
             }
@@ -50,7 +50,7 @@ export class EventTarget<T extends string> {
         if (_eventID !== void 0) {
             return this._hasEventListener(_eventID);
         }
-        for (let eventID in this._eventObservers) {
+        for (const eventID in this._eventObservers) {
             if (this._hasEventListener(eventID)) {
                 return true;
             }
@@ -66,7 +66,7 @@ export function unitTest() {
             function echoEvent(...args: any[]) {
                 // console.log(JSON.stringify(args));
             }
-            let et = new EventTarget("aaa", "bbb", "zzz");
+            const et = new EventTarget("aaa", "bbb", "zzz");
             expect(et.hasEventListener()).is.false;
             et.addEventListener("aaa", echoEvent);
             et.dispatchEvent("zzz");

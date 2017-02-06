@@ -32,8 +32,8 @@ export class Connection {
     }
 
     serialize(obj: any) {
-        let str: string[] = [];
-        for (let key in obj) {
+        const str: string[] = [];
+        for (const key in obj) {
             if (obj.hasOwnProperty(key)) {
                 str.push(encodeURIComponent(key) + "=" + encodeURIComponent(obj[key]));
             }
@@ -42,10 +42,10 @@ export class Connection {
     }
 
     protected transmit(verb: VERB, href: string, form: any): Promise<any> {
-        let context = this;
+        const context = this;
         this.eventTarget.dispatchEvent("progress", "preSend");
         return new Promise((resolve, reject) => {
-            let formStr = this.serialize(form);
+            const formStr = this.serialize(form);
             request(href + (verb === "GET" ? "?" + formStr : ""))
                 .header("X-Requested-With", "XMLHttpRequest")
                 .header("Content-Type", "application/x-www-form-urlencoded")

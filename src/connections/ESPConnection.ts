@@ -4,7 +4,7 @@ import { Connection, ConnectionError, VERB } from "./Connection";
 
 export function inner(prop: string, obj: any): any {
     if (prop === void 0 || obj === void 0) return void 0;
-    for (let item of prop.split(".")) {
+    for (const item of prop.split(".")) {
         if (obj[item] === undefined) {
             return undefined;
         }
@@ -22,10 +22,10 @@ export function mixin(target: any, ...args: any[]) {
         throw new TypeError("Cannot convert undefined or null to object");
     }
 
-    let to = Object(target);
-    for (let nextSource of args) {
+    const to = Object(target);
+    for (const nextSource of args) {
         if (nextSource != null) { // Skip over if undefined or null
-            for (let nextKey in nextSource) {
+            for (const nextKey in nextSource) {
                 // Avoid bugs when hasOwnProperty is shadowed
                 if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) {
                     to[nextKey] = nextSource[nextKey];
@@ -95,7 +95,7 @@ export class ESPConnection extends Connection {
                     if (response.Exceptions) {
                         throw new ESPExceptions(action, form, response.Exceptions);
                     }
-                    let retVal = response[`${action}Response`];
+                    const retVal = response[`${action}Response`];
                     if (!retVal) {
                         throw new ESPExceptions(action, form, {
                             Source: "ESPConnection.transmit",

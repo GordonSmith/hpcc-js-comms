@@ -6,7 +6,7 @@ import { EventTarget } from "../util/EventTarget";
 import { logger } from "../util/Logging";
 export { WUStateID }
 
-let _workunits: { [key: string]: Workunit } = {};
+const _workunits: { [key: string]: Workunit } = {};
 
 export type Partial<T> = {
     [P in keyof T]?: T[P];
@@ -18,6 +18,7 @@ export interface IChangedProperty {
     newValue: any;
 }
 
+type Events = "StateIDChanged" | "changed" | "completed";
 export class Workunit {
     connection: WsWorkunits;
     topologyConnection: WsTopology;
@@ -25,7 +26,7 @@ export class Workunit {
     private _espWorkunitCache: string[] = [];
     private _espWorkunitCacheID: number = 0;
     private _submitAction: WUAction;
-    private _events = new EventTarget(); // "StateIDChanged", "changed", "completed");
+    private _events = new EventTarget<Events>();
     private _monitorHandle: any;
     private _monitorTickCount: number = 0;
 
@@ -41,7 +42,7 @@ export class Workunit {
 
     //  Factories  ---
     static create(href: string): Promise<Workunit> {
-        let retVal = new Workunit(href);
+        const retVal = new Workunit(href);
         return retVal.connection.WUCreate().then((response) => {
             _workunits[response.Workunit.Wuid] = retVal;
             retVal._espWorkunit.Wuid = response.Workunit.Wuid;
@@ -54,7 +55,7 @@ export class Workunit {
         if (!_workunits[wuid]) {
             _workunits[wuid] = new Workunit(href, wuid);
         }
-        let retVal = _workunits[wuid];
+        const retVal = _workunits[wuid];
         if (state) {
             retVal._updateProperties(state);
         }
@@ -189,7 +190,7 @@ export class Workunit {
     }
 
     refresh(full: boolean = false): Promise<Workunit> {
-        let retVal: Promise<WUInfoResponse | WUQueryResponse> = full ? this.WUInfo() : this.WUQuery();
+        const retVal: Promise<WUInfoResponse | WUQueryResponse> = full ? this.WUInfo() : this.WUQuery();
         return retVal.then((response) => {
             return this;
         });
@@ -201,7 +202,7 @@ export class Workunit {
             return response;
         }).catch((e: ESPExceptions) => {
             //  deleted  ---
-            let wuMissing = e.Exception.some((exception) => {
+            const wuMissing = e.Exception.some((exception) => {
                 if (exception.Code === 20081) {
                     this.clearState(this.Wuid);
                     this._espWorkunit.StateID = WUStateID.NotFound;
@@ -222,7 +223,7 @@ export class Workunit {
             return response;
         }).catch((e: ESPExceptions) => {
             //  deleted  ---
-            let wuMissing = e.Exception.some((exception) => {
+            const wuMissing = e.Exception.some((exception) => {
                 if (exception.Code === 20080) {
                     this.clearState(this.Wuid);
                     this._espWorkunit.StateID = WUStateID.NotFound;
@@ -264,16 +265,16 @@ export class Workunit {
     }
 
     protected _updateProperties(_: WsWorkunit | ECLWorkunit): Workunit {
-        let changed: IChangedProperty[] = [];
-        let prevIsComplete = this.isComplete();
-        for (let key in _) {
+        const changed: IChangedProperty[] = [];
+        const prevIsComplete = this.isComplete();
+        for (const key in _) {
             if (_.hasOwnProperty(key)) {
-                let val = (<any>_)[key];
+                const val = (<any>_)[key];
                 if (val !== undefined || val !== null) {
-                    let jsonStr = JSON.stringify(val);
+                    const jsonStr = JSON.stringify(val);
                     if (this._espWorkunitCache[key] !== jsonStr) {
                         this._espWorkunitCache[key] = jsonStr;
-                        let changedInfo: IChangedProperty = {
+                        const changedInfo: IChangedProperty = {
                             id: key,
                             oldValue: this._espWorkunit[key],
                             newValue: _[key]
@@ -289,7 +290,7 @@ export class Workunit {
                 ++this._espWorkunitCacheID;
             }
             if (changedInfo.id === "StateID") {
-                this._events.dispatchEvent(changedInfo.id + "Changed", changedInfo.newValue, changedInfo.oldValue);
+                this._events.dispatchEvent("StateIDChanged", changedInfo.newValue, changedInfo.oldValue);
             }
             if (changed.length === idx + 1) {
                 this._events.dispatchEvent("changed", changed);
@@ -308,7 +309,7 @@ export class Workunit {
         }
 
         this._monitorHandle = setTimeout(() => {
-            let refreshPromise: Promise<any> = this._events.hasEventListener() ? this.WUInfo() : Promise.resolve(null);
+            const refreshPromise: Promise<any> = this._events.hasEventListener() ? this.WUInfo() : Promise.resolve(null);
             refreshPromise.then(() => {
                 this._monitor();
             });
@@ -333,7 +334,7 @@ export class Workunit {
     }
 
     //  Events  ---
-    on(id: string, callback: Function): Workunit {
+    on(id: Events, callback: Function): Workunit {
         this._events.addEventListener(id, callback);
         this._monitor();
         return this;
@@ -364,7 +365,7 @@ export class WorkunitMonitor {
 declare function expect(...args): any;
 export function unitTest() {
     const VM_HOST: string = "http://192.168.3.22:8010";
-    //  const VM_URL: string = "http://192.168.3.22:8010/WsWorkunits";
+    // const VM_URL: string = "http://192.168.3.22:8010/WsWorkunits";
     // const PUBLIC_URL: string = "http://52.51.90.23:8010/WsWorkunits";
 
     describe("Workunit", function () {

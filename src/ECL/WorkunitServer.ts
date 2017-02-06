@@ -2,7 +2,7 @@ import { Promise } from "es6-promise";
 import { WsWorkunits, WUQueryRequest } from "../connections/WsWorkunits";
 import { Workunit } from "./Workunit";
 
-let wuServers: { [key: string]: Server } = {};
+const wuServers: { [key: string]: Server } = {};
 export class Server {
 
     static attach(href: string): Server {
