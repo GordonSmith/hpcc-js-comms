@@ -1,7 +1,5 @@
 node_modules
-dist-dev
-dist-bundle
-dist-umd
-dist-es2015
+dist
+dist-test
 docx
 .vscode

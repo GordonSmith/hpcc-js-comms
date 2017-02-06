@@ -1,7 +1,7 @@
-import { dispatch } from "d3-dispatch";
+import { EventTarget } from "../util/EventTarget";
 import { request } from "d3-request";
 import { Promise } from "es6-promise";
-import { logger } from "../Util/Logging";
+import { logger } from "../util/Logging";
 
 const os = {
     EOL: "\n"
@@ -21,14 +21,14 @@ export class Connection {
     userPW: string = "";
     defaultMode: VERB = "POST";
 
-    event = dispatch("progress");
+    eventTarget = new EventTarget();
 
     constructor() {
     }
 
-    on(_: string, callback?: Function) {
-        let value = this.event.on.apply(this.event, arguments);
-        return value === this.event ? this : value;
+    on(_: string, callback: Function) {
+        this.eventTarget.addEventListener(_, callback);
+        return this;
     }
 
     serialize(obj: any) {
@@ -43,7 +43,7 @@ export class Connection {
 
     protected transmit(verb: VERB, href: string, form: any): Promise<any> {
         let context = this;
-        this.event.call("progress", this, "preSend");
+        this.eventTarget.dispatchEvent("progress", "preSend");
         return new Promise((resolve, reject) => {
             let formStr = this.serialize(form);
             request(href + (verb === "GET" ? "?" + formStr : ""))
@@ -53,7 +53,7 @@ export class Connection {
                 .password(this.userPW)
                 .on("beforesend.nodejs", (_) => { })
                 .on("progress", (_) => {
-                    this.event.call("progress", this, _);
+                    this.eventTarget.dispatchEvent("progress", _);
                 })
                 .on("load", (response: XMLHttpRequest) => {
                     if (response && response.status === 200) {
@@ -66,7 +66,7 @@ export class Connection {
                     reject(new ConnectionError("Unknown", response));
                 })
                 .send(verb, formStr);
-            this.event.call("progress", this, "postSend");
+            this.eventTarget.dispatchEvent("progress", "postSend");
         });
     }
 

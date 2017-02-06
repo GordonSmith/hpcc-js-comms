@@ -1,5 +1,5 @@
 import { Promise } from "es6-promise";
-import { logger } from "../Util/Logging";
+import { logger } from "../util/Logging";
 import { Connection, ConnectionError, VERB } from "./Connection";
 
 export function inner(prop: string, obj: any): any {

@@ -53,3 +53,13 @@ export class Logging {
 }
 
 export let logger = new Logging();
+
+//  Unit Tests ---
+declare function expect(...args);
+export function unitTest() {
+    describe("Logging", function () {
+        it("unitTest", function () {
+            expect(logger).is.not.undefined;
+        });
+    });
+}

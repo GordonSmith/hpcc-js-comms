@@ -5,14 +5,41 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "node",
+            "request": "launch",
+            "name": "Mocha Tests",
+            "cwd": "${workspaceRoot}",
+            "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/mocha",
+            "windows": {
+                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/mocha.cmd"
+            },
+            "linux": {
+                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/mocha"
+            },
+            "runtimeArgs": [
+                "-u",
+                "tdd",
+                "--timeout",
+                "999999",
+                "--colors",
+                "${workspaceRoot}/dist-test/test"
+            ],
+            "internalConsoleOptions": "openOnSessionStart",
+            "outFiles": [
+                "${workspaceRoot}/dist-test/src/**/*",
+                "${workspaceRoot}/dist-test/test/**/*"
+            ]
+        },
+        {
             "name": "Node Debug",
             "type": "node",
             "request": "launch",
-            "program": "${workspaceRoot}/dist-dev/test/runner-node.js",
+            "program": "${workspaceRoot}/dist/hpcc-platform-comms.js",
             "cwd": "${workspaceRoot}",
-            "outFiles": [],
-            "sourceMaps": true,
-            "outDir": "${workspaceRoot}/dist-dev/test"
+            "outFiles": [
+                "${workspaceRoot}/dist/**/*"
+            ],
+            "sourceMaps": true
         },
         {
             "name": "Chrome Debug",
@@ -20,44 +47,6 @@
             "request": "launch",
             "url": "file:///C:/Users/gordon/git/hpcc-platform-comms/test/runner-browser.html",
             "webRoot": "${workspaceRoot}/test"
-        },
-        {
-            "name": "Debug with mocha",
-            "type": "node",
-            "request": "launch",
-            "cwd": "${workspaceRoot}",
-            "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
-            "stopOnEntry": false,
-            "args": [
-                "-u",
-                "tdd",
-                "--no-timeouts",
-                "--debug",
-                "dist-dev/test/runner-mocha"
-            ],
-            "env": {
-                "NODE_ENV": "testing"
-            },
-            "sourceMaps": true,
-            "runtimeExecutable": null,
-            "outDir": "${workspaceRoot}/dist-dev/test"
-        },
-        {
-            "name": "Launch rollup",
-            "type": "node",
-            "request": "launch",
-            "program": "${workspaceRoot}/rollup-default.js",
-            "cwd": "${workspaceRoot}",
-            "outFiles": [],
-            "sourceMaps": true
-        },
-        {
-            "type": "node",
-            "request": "attach",
-            "name": "Attach to Process",
-            "port": 5858,
-            "outFiles": [],
-            "sourceMaps": true
         }
     ]
 }

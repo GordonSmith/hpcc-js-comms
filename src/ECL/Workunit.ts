@@ -1,9 +1,9 @@
-import { dispatch } from "d3-dispatch";
+import { EventTarget } from "../util/EventTarget";
 import { Promise } from "es6-promise";
 import { ESPExceptions, exists, mixin } from "../connections/ESPConnection";
 import { WsTopology } from "../connections/WsTopology";
 import { ECLWorkunit, isECLWorkunit, Workunit as WsWorkunit, WorkunitBase, WsWorkunits, WUAction, WUActionRequest, WUActionResponse, WUActionType, WUInfoRequest, WUInfoResponse, WUQueryRequest, WUQueryResponse, WUResubmitResponse, WUStateID, WUUpdateRequest } from "../connections/WsWorkunits";
-import { logger } from "../Util/Logging";
+import { logger } from "../util/Logging";
 export { WUStateID }
 
 let _workunits: { [key: string]: Workunit } = {};
@@ -25,9 +25,8 @@ export class Workunit {
     private _espWorkunitCache: string[] = [];
     private _espWorkunitCacheID: number = 0;
     private _submitAction: WUAction;
-    private _events = dispatch("StateIDChanged", "changed", "completed");
+    private _events = new EventTarget();//"StateIDChanged", "changed", "completed");
     private _monitorHandle: any;
-    private _hasListener: boolean;
     private _monitorTickCount: number = 0;
 
     //  Accessors  ---
@@ -41,8 +40,14 @@ export class Workunit {
     get Protected(): boolean { return this._espWorkunit.Protected; }
 
     //  Factories  ---
-    static exists(wuid: string): boolean {
-        return !!_workunits[wuid];
+    static create(href: string): Promise<Workunit> {
+        let retVal = new Workunit(href);
+        return retVal.connection.WUCreate().then((response) => {
+            _workunits[response.Workunit.Wuid] = retVal;
+            retVal._espWorkunit.Wuid = response.Workunit.Wuid;
+            retVal._updateProperties(response.Workunit);
+            return retVal;
+        });
     }
 
     static attach(href: string, wuid: string, state?: ECLWorkunit | WsWorkunit): Workunit {
@@ -54,6 +59,10 @@ export class Workunit {
             retVal._updateProperties(state);
         }
         return retVal;
+    }
+
+    static exists(wuid: string): boolean {
+        return !!_workunits[wuid];
     }
 
     //  ---  ---  ---
@@ -69,15 +78,6 @@ export class Workunit {
             StateID: WUStateID.Unknown
         };
         this._monitorTickCount = 0;
-    }
-
-    create() {
-        return this.connection.WUCreate().then((response) => {
-            _workunits[response.Workunit.Wuid] = this;
-            this._espWorkunit.Wuid = response.Workunit.Wuid;
-            this._updateProperties(response.Workunit);
-            return this;
-        });
     }
 
     update(request: Partial<WUUpdateRequest>, appData?: any, debugData?: any) {
@@ -287,14 +287,14 @@ export class Workunit {
                 ++this._espWorkunitCacheID;
             }
             if (changedInfo.id === "StateID") {
-                this._events.call(changedInfo.id + "Changed", this, changedInfo.newValue, changedInfo.oldValue);
+                this._events.dispatchEvent(changedInfo.id + "Changed", changedInfo.newValue, changedInfo.oldValue);
             }
             if (changed.length === idx + 1) {
-                this._events.call("changed", this, changed);
+                this._events.dispatchEvent("changed", changed);
             }
         });
         if (this.isComplete() && !prevIsComplete) {
-            this._events.call("completed", this);
+            this._events.dispatchEvent("completed");
         }
         return this;
     }
@@ -306,7 +306,7 @@ export class Workunit {
         }
 
         this._monitorHandle = setTimeout(() => {
-            let refreshPromise: Promise<any> = this._hasListener ? this.WUInfo() : Promise.resolve(null);
+            let refreshPromise: Promise<any> = this._events.hasEventListener() ? this.WUInfo() : Promise.resolve(null);
             refreshPromise.then(() => {
                 this._monitor();
             });
@@ -332,16 +332,7 @@ export class Workunit {
 
     //  Events  ---
     on(id: string, callback: Function): Workunit {
-        if (callback && this._events.on(id)) {
-            logger.warning(`Event already registered:  ${id}`);
-        }
-        this._events.on(id, callback);
-        this._hasListener = false;
-        for (let key in this._events) {
-            if (this._events[key].length) {
-                this._hasListener = true;
-            }
-        }
+        this._events.addEventListener(id, callback);
         this._monitor();
         return this;
     }
@@ -366,3 +357,71 @@ export class WorkunitMonitor {
     }
 }
 */
+
+//  Unit Tests ---
+declare function expect(...args): any;
+export function unitTest() {
+    const VM_HOST: string = "http://192.168.3.22:8010";
+    //  const VM_URL: string = "http://192.168.3.22:8010/WsWorkunits";
+    // const PUBLIC_URL: string = "http://52.51.90.23:8010/WsWorkunits";
+
+    describe("Workunit", function () {
+        let wu1: Workunit;
+        describe("simple life cycle", function () {
+            it("creation", function () {
+                return Workunit.create(VM_HOST).then(wu => {
+                    expect(wu).is.not.undefined;
+                    expect(wu.Wuid).is.not.undefined;
+                    wu1 = wu;
+                    return wu;
+                });
+            });
+            it("update", function () {
+                return wu1.update({ QueryText: "'Hello and Welcome!';" });
+            });
+            it("submit", function () {
+                return wu1.submit("hthor");
+            });
+            it("complete", function () {
+                return new Promise((resolve) => {
+                    if (wu1.isComplete()) {
+                        resolve();
+                    } else {
+                        wu1.on("completed", () => {
+                            resolve();
+                        });
+                    }
+                });
+            });
+        });
+    });
+    /*
+    return server.create().then((wu) => {
+        expect(wu).is.not.undefined;
+        expect(wu.wuid).is.not.undefined;
+        wu.on("StateIDChanged.logger", (stateID: WUStateID) => {
+            console.log(wu.wuid + "-" + wu.state);
+        });
+        return wu;
+    }).then((wu) => {
+        return wu.ecl(testECL);
+    }).then((wu) => {
+        expect(wu.ecl()).equals(testECL);
+        return wu.submit("hthor");
+    }).then((wu) => {
+        return new Promise<Workunit>((resolve, reject) => {
+            if (wu.isComplete()) {
+                resolve(wu);
+            } else {
+                wu.on("StateIDChanged", (stateID: WUStateID) => {
+                    if (wu.isComplete()) {
+                        resolve(wu);
+                    }
+                });
+            }
+        });
+    }).then((wu) => {
+        return wu.delete();
+    });
+    */
+}
