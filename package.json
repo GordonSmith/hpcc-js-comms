@@ -12,13 +12,14 @@
   "jsnext:main": "dist/src/index.js",
   "scripts": {
     "tsc-es2015": "tsc -p .",
+    "tsc-test": "tsc -p ./test",
     "webpack": "webpack",
     "webpack-min": "cross-env NODE_ENV=min webpack",
     "webpack-min-debug": "cross-env NODE_ENV=min-debug webpack",
     "build": "npm run tsc-es2015 && npm run webpack && npm run webpack-min",
     "watch": "cross-env NODE_ENV=watch webpack",
     "lint": "tslint ./src/**/*",
-    "test": "npm run lint && mocha ./dist-test/test/index.js",
+    "test": "npm run lint && npm run tsc-test && mocha ./dist-test/test/index.js",
     "prepublish": "npm run build",
     "doc": "typedoc --out ./docx/ --tsconfig ./tsconfig.json --exclude node_modules --excludeNotExported --ignoreCompilerErrors src"
   },
