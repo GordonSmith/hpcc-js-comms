@@ -7,7 +7,9 @@ import { expect } from "chai";
 
 utEventTarget();
 utLogging();
-utWorkunit();
+if (!process.env.TRAVIS) {
+    utWorkunit();
+}
 
 /*
 describe("EventTarget", function () {
