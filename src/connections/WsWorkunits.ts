@@ -115,6 +115,20 @@ export interface AllowedClusters {
     AllowedCluster: string[];
 }
 
+export interface ECLException {
+    Source: string;
+    Severity: string;
+    Code: number;
+    Message: string;
+    FileName: string;
+    LineNo: number;
+    Column: number;
+}
+
+export interface Exceptions {
+    ECLException: ECLException[];
+}
+
 export interface WorkunitBase {
     Wuid: string;
     Owner: string;
@@ -153,6 +167,7 @@ export interface Workunit extends WorkunitBase {
     Helpers: Helpers;
     Results: Results;
     Timers: Timers;
+    Exceptions: Exceptions;
     DebugValues: DebugValues;
     AllowedClusters: AllowedClusters;
     ErrorCount: number;
@@ -525,14 +540,14 @@ export interface WUGetGraphResponse {
 }
 
 export interface WUResultRequest {
-    Wuid: string;
-    Sequence: string;
-    ResultName: string;
-    LogicalName: string;
-    Cluster: string;
-    SuppressXmlSchema: boolean;
-    BypassCachedResult: boolean;
-    FilterBy: any[];
+    Wuid?: string;
+    Sequence?: number;
+    ResultName?: string;
+    LogicalName?: string;
+    Cluster?: string;
+    SuppressXmlSchema?: boolean;
+    BypassCachedResult?: boolean;
+    FilterBy?: any[];
     Start: number;
     Count: number;
 }

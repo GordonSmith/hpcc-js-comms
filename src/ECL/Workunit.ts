@@ -1,9 +1,11 @@
 import { Promise } from "es6-promise";
-import { ESPExceptions, exists, mixin } from "../connections/ESPConnection";
+import { ESPExceptions, mixin } from "../connections/ESPConnection";
 import { WsTopology } from "../connections/WsTopology";
-import { ECLWorkunit, isECLWorkunit, Workunit as WsWorkunit, WorkunitBase, WsWorkunits, WUAction, WUActionRequest, WUActionResponse, WUActionType, WUInfoRequest, WUInfoResponse, WUQueryRequest, WUQueryResponse, WUResubmitResponse, WUStateID, WUUpdateRequest } from "../connections/WsWorkunits";
-import { EventTarget } from "../util/EventTarget";
+import { ECLException, ECLResult, ECLWorkunit, Workunit as WsWorkunit, WsWorkunits, WUAction, WUActionResponse, WUActionType, WUInfoRequest, WUInfoResponse, WUQueryRequest, WUQueryResponse, WUResubmitResponse, WUStateID, WUUpdateRequest } from "../connections/WsWorkunits";
+import { IChangedProperty } from "../util/EventTarget";
 import { logger } from "../util/Logging";
+import { ESPStateObject } from "./ESPStateObject";
+import { Result } from "./Result";
 export { WUStateID }
 
 const _workunits: { [key: string]: Workunit } = {};
@@ -12,41 +14,42 @@ export type Partial<T> = {
     [P in keyof T]?: T[P];
 };
 
-export interface IChangedProperty {
-    id: string;
-    oldValue: any;
-    newValue: any;
-}
-
-type Events = "StateIDChanged" | "changed" | "completed";
+type Events = "changed" | "completed";
 export class Workunit {
     connection: WsWorkunits;
     topologyConnection: WsTopology;
-    private _espWorkunit: ECLWorkunit & WsWorkunit;
-    private _espWorkunitCache: string[] = [];
-    private _espWorkunitCacheID: number = 0;
+    private _espWorkunit: ESPStateObject<ECLWorkunit & WsWorkunit, ECLWorkunit | WsWorkunit> = new ESPStateObject<ECLWorkunit & WsWorkunit, ECLWorkunit | WsWorkunit>();
     private _submitAction: WUAction;
-    private _events = new EventTarget<Events>();
     private _monitorHandle: any;
     private _monitorTickCount: number = 0;
 
     //  Accessors  ---
-    get properties(): ECLWorkunit & WsWorkunit { return this._espWorkunit; }
-    get Wuid(): string { return this._espWorkunit.Wuid; }
-    get Owner(): string { return this._espWorkunit.Owner; }
-    get Cluster(): string { return this._espWorkunit.Cluster; }
-    get Jobname(): string { return this._espWorkunit.Jobname; }
-    get StateID(): WUStateID { return this._espWorkunit.StateID; }
-    get State(): string { return WUStateID[this._espWorkunit.StateID ? this._espWorkunit.StateID : WUStateID.Unknown]; }
-    get Protected(): boolean { return this._espWorkunit.Protected; }
+    get properties(): ECLWorkunit & WsWorkunit { return this._espWorkunit.get(); }
+    get Wuid(): string { return this._espWorkunit.get("Wuid"); }
+    get Owner(): string { return this._espWorkunit.get("Owner", ""); }
+    get Cluster(): string { return this._espWorkunit.get("Cluster", ""); }
+    get Jobname(): string { return this._espWorkunit.get("Jobname", ""); }
+    get Description(): string { return this._espWorkunit.get("Description", ""); }
+    get ActionEx(): string { return this._espWorkunit.get("ActionEx", ""); }
+    get StateID(): WUStateID { return this._espWorkunit.get("StateID", WUStateID.Unknown); }
+    get State(): string { return WUStateID[this.StateID]; }
+    get Protected(): boolean { return this._espWorkunit.get("Protected", false); }
+    get Exceptions(): ECLException[] { return this._espWorkunit.inner("Exceptions.ECLException", []); }
+    get Results(): Result[] {
+        return this._espWorkunit.inner("Results.ECLResult", []).map((eclResult) => {
+            //  TODO Cache?
+            return new Result(this, eclResult);
+        });
+    }
+    get Archived(): boolean { return this._espWorkunit.get("Archived"); }
+    get SequenceResults(): ECLResult[] { return this.Results; }
 
     //  Factories  ---
     static create(href: string): Promise<Workunit> {
         const retVal = new Workunit(href);
         return retVal.connection.WUCreate().then((response) => {
             _workunits[response.Workunit.Wuid] = retVal;
-            retVal._espWorkunit.Wuid = response.Workunit.Wuid;
-            retVal._updateProperties(response.Workunit);
+            retVal._espWorkunit.set(response.Workunit);
             return retVal;
         });
     }
@@ -57,7 +60,7 @@ export class Workunit {
         }
         const retVal = _workunits[wuid];
         if (state) {
-            retVal._updateProperties(state);
+            retVal._espWorkunit.set(state);
         }
         return retVal;
     }
@@ -74,25 +77,25 @@ export class Workunit {
     }
 
     clearState(wuid: string) {
-        this._espWorkunit = <ECLWorkunit & WsWorkunit>{
+        this._espWorkunit.clear({
             Wuid: wuid,
             StateID: WUStateID.Unknown
-        };
+        });
         this._monitorTickCount = 0;
     }
 
     update(request: Partial<WUUpdateRequest>, appData?: any, debugData?: any) {
         return this.connection.WUUpdate(mixin({}, request, {
             Wuid: this.Wuid,
-            StateOrig: this._espWorkunit.State,
-            JobnameOrig: this._espWorkunit.Jobname,
-            DescriptionOrig: this._espWorkunit.Description,
-            ProtectedOrig: this._espWorkunit.Protected,
-            ClusterOrig: this._espWorkunit.Cluster,
+            StateOrig: this.State,
+            JobnameOrig: this.Jobname,
+            DescriptionOrig: this.Description,
+            ProtectedOrig: this.Protected,
+            ClusterOrig: this.Cluster,
             ApplicationValues: appData,
             DebugValues: debugData
         })).then((response) => {
-            this._updateProperties(response.Workunit);
+            this._espWorkunit.set(response.Workunit);
             return this;
         });
     }
@@ -113,7 +116,7 @@ export class Workunit {
                 Action: action,
                 ResultLimit: resultLimit
             }).then((response) => {
-                this._updateProperties(response.Workunit);
+                this._espWorkunit.set(response.Workunit);
                 this._submitAction = action;
                 return this.connection.WUSubmit({ Wuid: this.Wuid, Cluster: cluster }).then(() => {
                     return this;
@@ -123,9 +126,9 @@ export class Workunit {
     }
 
     isComplete(): boolean {
-        switch (this._espWorkunit.StateID) {
+        switch (this.StateID) {
             case WUStateID.Compiled:
-                return this._espWorkunit.ActionEx === "compile" || this._submitAction === WUAction.Compile;
+                return this.ActionEx === "compile" || this._submitAction === WUAction.Compile;
             case WUStateID.Completed:
             case WUStateID.Failed:
             case WUStateID.Aborted:
@@ -136,7 +139,7 @@ export class Workunit {
     }
 
     isFailed() {
-        switch (this._espWorkunit.StateID) {
+        switch (this.StateID) {
             case WUStateID.Failed:
                 return true;
             default:
@@ -145,7 +148,7 @@ export class Workunit {
     }
 
     isDeleted() {
-        switch (this._espWorkunit.StateID) {
+        switch (this.StateID) {
             case WUStateID.NotFound:
                 return true;
             default:
@@ -196,16 +199,82 @@ export class Workunit {
         });
     }
 
+    fetchResults(): Promise<ECLResult[]> {
+        return this.WUInfo({ IncludeResults: true }).then((response) => {
+            return this.Results;
+        });
+    };
+
+    //  Monitoring  ---
+    protected _monitor(): void {
+        if (this._monitorHandle || this.isComplete()) {
+            this._monitorTickCount = 0;
+            return;
+        }
+
+        this._monitorHandle = setTimeout(() => {
+            const refreshPromise: Promise<any> = this._espWorkunit.hasEventListener() ? this.WUInfo() : Promise.resolve(null);
+            refreshPromise.then(() => {
+                this._monitor();
+            });
+            delete this._monitorHandle;
+        }, this._monitorTimeoutDuraction());
+    }
+
+    private _monitorTimeoutDuraction(): number {
+        ++this._monitorTickCount;
+        if (this._monitorTickCount <= 1) {
+            return 0;
+        } else if (this._monitorTickCount <= 3) {
+            return 500;
+        } else if (this._monitorTickCount <= 10) {
+            return 1000;
+        } else if (this._monitorTickCount <= 20) {
+            return 3000;
+        } else if (this._monitorTickCount <= 30) {
+            return 5000;
+        }
+        return 10000;
+    }
+
+    //  Events  ---
+    on(id: Events, callback: Function): Workunit {
+        switch (id) {
+            case "changed":
+                this._espWorkunit.on(id, callback);
+                break;
+            case "completed":
+                this._espWorkunit.on("propChanged", "StateID", (changeInfo: IChangedProperty) => {
+                    if (this.isComplete()) {
+                        callback(changeInfo);
+                    }
+                });
+                break;
+            default:
+        }
+        this._monitor();
+        return this;
+    }
+
+    watch(callback: Function) {
+        return this._espWorkunit.on("changed", (changes: IChangedProperty[]) => {
+            changes.forEach((changeInfo) => {
+                callback(changeInfo.id, changeInfo.oldValue, changeInfo.newValue);
+            });
+        });
+    }
+
+    //  WsWorkunits passthroughs  ---
     protected WUQuery(_request?: Partial<WUQueryRequest>): Promise<WUQueryResponse> {
         return this.connection.WUQuery(mixin({}, _request, { Wuid: this.Wuid })).then((response) => {
-            this._updateProperties(response.Workunits.ECLWorkunit[0]);
+            this._espWorkunit.set(response.Workunits.ECLWorkunit[0]);
             return response;
         }).catch((e: ESPExceptions) => {
             //  deleted  ---
             const wuMissing = e.Exception.some((exception) => {
                 if (exception.Code === 20081) {
                     this.clearState(this.Wuid);
-                    this._espWorkunit.StateID = WUStateID.NotFound;
+                    this._espWorkunit.set("StateID", WUStateID.NotFound);
                     return true;
                 }
                 return false;
@@ -217,16 +286,24 @@ export class Workunit {
         });
     }
 
+    protected WUCreate() {
+        return this.connection.WUCreate().then((response) => {
+            _workunits[response.Workunit.Wuid] = this;
+            this._espWorkunit.set(response.Workunit);
+            return response;
+        });
+    }
+
     protected WUInfo(_request?: Partial<WUInfoRequest>): Promise<WUInfoResponse> {
         return this.connection.WUInfo(mixin({}, _request, { Wuid: this.Wuid })).then((response) => {
-            this._updateProperties(response.Workunit);
+            this._espWorkunit.set(response.Workunit);
             return response;
         }).catch((e: ESPExceptions) => {
             //  deleted  ---
             const wuMissing = e.Exception.some((exception) => {
                 if (exception.Code === 20080) {
                     this.clearState(this.Wuid);
-                    this._espWorkunit.StateID = WUStateID.NotFound;
+                    this._espWorkunit.set("StateID", WUStateID.NotFound);
                     return true;
                 }
                 return false;
@@ -263,82 +340,6 @@ export class Workunit {
             });
         });
     }
-
-    protected _updateProperties(_: WsWorkunit | ECLWorkunit): Workunit {
-        const changed: IChangedProperty[] = [];
-        const prevIsComplete = this.isComplete();
-        for (const key in _) {
-            if (_.hasOwnProperty(key)) {
-                const val = (<any>_)[key];
-                if (val !== undefined || val !== null) {
-                    const jsonStr = JSON.stringify(val);
-                    if (this._espWorkunitCache[key] !== jsonStr) {
-                        this._espWorkunitCache[key] = jsonStr;
-                        const changedInfo: IChangedProperty = {
-                            id: key,
-                            oldValue: this._espWorkunit[key],
-                            newValue: _[key]
-                        };
-                        changed.push(changedInfo);
-                        this._espWorkunit[key] = changedInfo.newValue;
-                    }
-                }
-            }
-        }
-        changed.forEach((changedInfo, idx) => {
-            if (idx === 0) {
-                ++this._espWorkunitCacheID;
-            }
-            if (changedInfo.id === "StateID") {
-                this._events.dispatchEvent("StateIDChanged", changedInfo.newValue, changedInfo.oldValue);
-            }
-            if (changed.length === idx + 1) {
-                this._events.dispatchEvent("changed", changed);
-            }
-        });
-        if (this.isComplete() && !prevIsComplete) {
-            this._events.dispatchEvent("completed");
-        }
-        return this;
-    }
-
-    protected _monitor(): void {
-        if (this._monitorHandle || this.isComplete()) {
-            this._monitorTickCount = 0;
-            return;
-        }
-
-        this._monitorHandle = setTimeout(() => {
-            const refreshPromise: Promise<any> = this._events.hasEventListener() ? this.WUInfo() : Promise.resolve(null);
-            refreshPromise.then(() => {
-                this._monitor();
-            });
-            delete this._monitorHandle;
-        }, this._monitorTimeoutDuraction());
-    }
-
-    private _monitorTimeoutDuraction(): number {
-        ++this._monitorTickCount;
-        if (this._monitorTickCount <= 1) {
-            return 0;
-        } else if (this._monitorTickCount <= 3) {
-            return 500;
-        } else if (this._monitorTickCount <= 10) {
-            return 1000;
-        } else if (this._monitorTickCount <= 20) {
-            return 3000;
-        } else if (this._monitorTickCount <= 30) {
-            return 5000;
-        }
-        return 10000;
-    }
-
-    //  Events  ---
-    on(id: Events, callback: Function): Workunit {
-        this._events.addEventListener(id, callback);
-        this._monitor();
-        return this;
-    }
 }
 
 /*
@@ -368,9 +369,34 @@ export function unitTest() {
     // const VM_URL: string = "http://192.168.3.22:8010/WsWorkunits";
     // const PUBLIC_URL: string = "http://52.51.90.23:8010/WsWorkunits";
 
+    describe("ESPStateObject", function () {
+        interface ITest {
+            aaa: string;
+            bbb: number;
+        }
+        const stateObj = new ESPStateObject<ITest, ITest>();
+        stateObj.on("changed", (changes) => {
+            // console.log(`changed:  ${JSON.stringify(changes)}`);
+        });
+        it("basic", function () {
+            expect(stateObj.has("aaa")).to.be.false;
+            expect(stateObj.get("aaa")).to.be.undefined;
+            stateObj.set("aaa", "abc");
+            expect(stateObj.has("aaa")).to.be.true;
+            expect(stateObj.get("aaa")).to.be.defined;
+            expect(stateObj.get("aaa")).to.be.string;
+            stateObj.set("bbb", 123);
+            expect(stateObj.get("bbb")).to.be.number;
+            stateObj.set({ aaa: "hello", bbb: 123 });
+        });
+        // console.log(`get(aaa):  ${JSON.stringify(stateObj.get("aaa"))}`);
+        // console.log(`get(bbb):  ${JSON.stringify(stateObj.get("bbb"))}`);
+        // console.log(`get:  ${JSON.stringify(stateObj.get())}`);
+    });
+
     describe("Workunit", function () {
-        let wu1: Workunit;
         describe("simple life cycle", function () {
+            let wu1: Workunit;
             it("creation", function () {
                 return Workunit.create(VM_HOST).then((wu) => {
                     expect(wu).is.not.undefined;
@@ -394,6 +420,34 @@ export function unitTest() {
                             resolve();
                         });
                     }
+                });
+            });
+            it("results", function () {
+                return wu1.fetchResults().then((results) => {
+                    expect(results.length).equals(1);
+                    return wu1.Results[0].fetchXMLSchema().then((result) => {
+                        // console.log(JSON.stringify(results));
+                        return wu1;
+                    });
+                    // console.log(JSON.stringify(results));
+                });
+            });
+        });
+        describe.only("XSD Parsing", function () {
+            it("basic", function () {
+                const wu = Workunit.attach(VM_HOST, "W20170208-123106");
+                let result;
+                return wu.fetchResults().then(() => {
+                    result = wu.Results[2];
+                    return result.fetchXMLSchema().then((response) => {
+                        // console.log(JSON.stringify(results));
+                        return wu;
+                    }).then(() => {
+                        return result.fetchResult().then((response) => {
+                            // console.log(JSON.stringify(results));
+                            return wu;
+                        });
+                    });
                 });
             });
         });

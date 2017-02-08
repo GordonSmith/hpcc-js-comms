@@ -20,12 +20,13 @@
     "watch": "cross-env NODE_ENV=watch webpack",
     "lint": "tslint ./src/**/*",
     "test": "npm run lint && npm run tsc-test && mocha ./dist-test/test/index.js",
-    "prepublish": "npm run build",
+    "prepublishXXX": "npm run build",
     "doc": "typedoc --out ./docx/ --tsconfig ./tsconfig.json --exclude node_modules --excludeNotExported --ignoreCompilerErrors src"
   },
   "dependencies": {
     "es6-promise": "~4.0.5",
-    "d3-request": "~1.0.3"
+    "d3-request": "~1.0.3",
+    "sax": "~1.2.2"
   },
   "devDependencies": {
     "@types/chai": "~3.4.34",
