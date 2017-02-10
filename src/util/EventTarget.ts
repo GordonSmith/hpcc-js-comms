@@ -30,7 +30,7 @@ export class EventTarget<T extends string> {
     constructor(...args: T[]) {
     }
 
-    addEventListener(eventID: T, callback) {
+    addEventListener(eventID: T, callback: Function): EventListenerHandle<T> {
         let eventObservers = this._eventObservers[eventID];
         if (!eventObservers) {
             eventObservers = [];
@@ -40,7 +40,7 @@ export class EventTarget<T extends string> {
         return new EventListenerHandle<T>(this, eventID, callback);
     }
 
-    removeEventListener(eventID: T, callback) {
+    removeEventListener(eventID: T, callback: Function): this {
         const eventObservers = this._eventObservers[eventID];
         if (eventObservers) {
             for (let i = eventObservers.length - 1; i >= 0; --i) {
@@ -52,7 +52,7 @@ export class EventTarget<T extends string> {
         return this;
     }
 
-    dispatchEvent(eventID: T, ...args) {
+    dispatchEvent(eventID: T, ...args: any[]): this {
         const eventObservers = this._eventObservers[eventID];
         if (eventObservers) {
             for (const observer of eventObservers) {

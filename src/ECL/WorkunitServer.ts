@@ -1,5 +1,5 @@
 import { Promise } from "es6-promise";
-import { WsWorkunits, WUQueryRequest } from "../connections/WsWorkunits";
+import { Connection, WUQueryRequest } from "../connections/WsWorkunits";
 import { Workunit } from "./Workunit";
 
 const wuServers: { [key: string]: Server } = {};
@@ -13,11 +13,11 @@ export class Server {
     }
 
     href: string;
-    connection: WsWorkunits;
+    connection: Connection;
 
     protected constructor(href: string = "") {
         this.href = href;
-        this.connection = new WsWorkunits(href);
+        this.connection = new Connection(href);
     }
 
     create(): Promise<Workunit> {

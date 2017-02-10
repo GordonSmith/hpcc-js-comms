@@ -14,19 +14,20 @@
     "tsc-es2015": "tsc -p .",
     "tsc-test": "tsc -p ./test",
     "webpack": "webpack",
-    "webpack-min": "cross-env NODE_ENV=min webpack",
+    "webpack-min": "cross-env NODE_ENV=min webpack --display-modules",
     "webpack-min-debug": "cross-env NODE_ENV=min-debug webpack",
     "build": "npm run tsc-es2015 && npm run webpack && npm run webpack-min",
     "watch": "cross-env NODE_ENV=watch webpack",
     "lint": "tslint ./src/**/*",
     "test": "npm run lint && npm run tsc-test && mocha ./dist-test/test/index.js",
-    "prepublishXXX": "npm run build",
+    "prepublish": "npm run build",
     "doc": "typedoc --out ./docx/ --tsconfig ./tsconfig.json --exclude node_modules --excludeNotExported --ignoreCompilerErrors src"
   },
   "dependencies": {
     "es6-promise": "~4.0.5",
     "d3-request": "~1.0.3",
-    "sax": "~1.2.2"
+    "sax": "~1.2.2",
+    "hash-sum": "~1.0.2"
   },
   "devDependencies": {
     "@types/chai": "~3.4.34",

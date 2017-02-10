@@ -24,8 +24,8 @@ const config = {
             }
         ]
     },
-    externals: [
-    ],
+    externals: {
+    },
     plugins: [
     ]
 };

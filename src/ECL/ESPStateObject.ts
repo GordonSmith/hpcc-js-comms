@@ -1,3 +1,4 @@
+import * as sum from "hash-sum";
 import { exists, inner } from "../connections/ESPConnection";
 import { EventTarget, IChangedProperty } from "../util/EventTarget";
 
@@ -7,7 +8,7 @@ export class ESPStateObject<U, I> {
     private _espStateCache: { [key: string]: string } = {};
     private _events = new EventTarget<ESPStateEvents>();
 
-    clear(newVals?: Partial<I>) {
+    protected clear(newVals?: Partial<I>) {
         this._espState = <U>{};
         this._espStateCache = {};
         if (newVals !== void 0) {
@@ -15,21 +16,21 @@ export class ESPStateObject<U, I> {
         }
     }
 
-    get(): U;
-    get<K extends keyof U>(key: K, defValue?: U[K]): U[K];
-    get<K extends keyof U>(key?: K, defValue?: U[K]): U | U[K] {
+    protected get(): U;
+    protected get<K extends keyof U>(key: K, defValue?: U[K]): U[K];
+    protected get<K extends keyof U>(key?: K, defValue?: U[K]): U | U[K] {
         if (key === void 0) {
             return this._espState;
         }
         return this.has(key) ? this._espState[key] : defValue;
     }
-    inner(qualifiedID: string, defValue?: any) {
+    protected innerXXX(qualifiedID: string, defValue?: any) {
         return exists(qualifiedID, this._espState) ? inner(qualifiedID, this._espState) : defValue;
     }
 
-    set(newVals: I): IChangedProperty[];
-    set<K extends keyof U>(key: K, newVal: U[K], batchMode?: boolean): IChangedProperty;
-    set<K extends keyof U>(keyOrNewVals: K | U, newVal?: U[K], batchMode: boolean = false): IChangedProperty[] | IChangedProperty {
+    protected set(newVals: I): IChangedProperty[];
+    protected set<K extends keyof U>(key: K, newVal: U[K], batchMode?: boolean): IChangedProperty;
+    protected set<K extends keyof U>(keyOrNewVals: K | U, newVal?: U[K], batchMode: boolean = false): IChangedProperty[] | IChangedProperty {
         if (typeof keyOrNewVals === "string") {
             return this.setSingle(keyOrNewVals, newVal, batchMode);
         }
@@ -38,7 +39,7 @@ export class ESPStateObject<U, I> {
 
     private setSingle<K extends keyof U>(key: K, newVal: U[K], batchMode: boolean): IChangedProperty {
         const oldCacheVal = this._espStateCache[(<string>key)];
-        const newCacheVal = JSON.stringify(newVal);
+        const newCacheVal = sum(newVal);
         if (oldCacheVal !== newCacheVal) {
             this._espStateCache[key] = newCacheVal;
             const oldVal = this._espState[key];
@@ -72,48 +73,73 @@ export class ESPStateObject<U, I> {
         return changed;
     }
 
-    has<K extends keyof U>(key: K): boolean {
+    protected has<K extends keyof U>(key: K): boolean {
         return this._espState[key] !== void 0;
     }
 
     on(eventID: ESPStateEvents, callback: Function);
     on(eventID: ESPStateEvents, propID: keyof U, callback: Function);
-    on(eventID: ESPStateEvents, ...args) {
-        switch (eventID) {
-            case "changed":
-                return this._events.addEventListener(eventID, args[0]);
-            case "propChanged":
-                return this._events.addEventListener(eventID, (changeInfo: IChangedProperty) => {
-                    if (changeInfo.id === args[0]) {
-                        args[1](changeInfo);
-                    }
-                });
-            default:
+    on(eventID: ESPStateEvents, propIDOrCallback: Function | keyof U, callback?: Function) {
+        if (this.isCallback(propIDOrCallback)) {
+            switch (eventID) {
+                case "changed":
+                    return this._events.addEventListener(eventID, propIDOrCallback);
+                default:
+            }
+        } else {
+            switch (eventID) {
+                case "propChanged":
+                    return this._events.addEventListener(eventID, (changeInfo: IChangedProperty) => {
+                        if (changeInfo.id === propIDOrCallback) {
+                            callback(changeInfo);
+                        }
+                    });
+                default:
+            }
         }
+        return this;
     }
 
-    hasEventListener(): boolean {
+    protected isCallback(propIDOrCallback: Function | keyof U): propIDOrCallback is Function {
+        return (typeof propIDOrCallback === "function");
+    }
+
+    protected hasEventListener(): boolean {
         return this._events.hasEventListener();
     }
 }
 
-export class ESPSingleton {
-    static cache: { [id: string]: ESPSingleton } = {};
+declare function expect(...args): any;
+export function unitTest() {
+    const VM_HOST: string = "http://192.168.3.22:8010";
+    // const VM_URL: string = "http://192.168.3.22:8010/WsWorkunits";
+    // const PUBLIC_URL: string = "http://52.51.90.23:8010/WsWorkunits";
 
-    private constructor() {
-        if (ESPSingleton.cache[this.uniqueID()]) {
-            throw new Error("Error - use Singleton.getInstance()");
+    describe.only("ESPStateObject", function () {
+        interface ITest {
+            aaa: string;
+            bbb: number;
         }
-    };
-
-    getInstance(uniqueID: string) {
-        if (ESPSingleton.cache[uniqueID]) {
-            return ESPSingleton.cache[uniqueID];
-        }
-
-    }
-
-    uniqueID(): string {
-        return "";
-    };
+        const stateObj: any = new ESPStateObject<ITest, ITest>();
+        stateObj.on("changed", (changes) => {
+            console.log(`changed:  ${JSON.stringify(changes)}`);
+        });
+        it("basic", function () {
+            expect(stateObj.has("aaa")).to.be.false;
+            expect(stateObj.get("aaa")).to.be.undefined;
+            stateObj.set("aaa", "abc");
+            expect(stateObj.has("aaa")).to.be.true;
+            expect(stateObj.get("aaa")).to.be.defined;
+            expect(stateObj.get("aaa")).to.be.string;
+            stateObj.set("bbb", 123);
+            expect(stateObj.get("bbb")).to.be.number;
+            stateObj.set({ aaa: "hello", bbb: 123 });
+            stateObj.set({ aaa: "hello", bbb: 123 });
+            stateObj.set({ aaa: "hello", bbb: 123 });
+            stateObj.set({ aaa: "hello", bbb: 123 });
+        });
+        // console.log(`get(aaa):  ${JSON.stringify(stateObj.get("aaa"))}`);
+        // console.log(`get(bbb):  ${JSON.stringify(stateObj.get("bbb"))}`);
+        // console.log(`get:  ${JSON.stringify(stateObj.get())}`);
+    });
 }

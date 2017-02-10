@@ -1,12 +1,17 @@
 import { Promise } from "es6-promise";
-import { ESPExceptions, mixin } from "../connections/ESPConnection";
+import { ESPExceptions } from "../connections/ESPConnection";
 import { WsTopology } from "../connections/WsTopology";
-import { ECLException, ECLResult, ECLWorkunit, Workunit as WsWorkunit, WsWorkunits, WUAction, WUActionResponse, WUActionType, WUInfoRequest, WUInfoResponse, WUQueryRequest, WUQueryResponse, WUResubmitResponse, WUStateID, WUUpdateRequest } from "../connections/WsWorkunits";
+import * as WsWorkunits from "../connections/WsWorkunits";
 import { IChangedProperty } from "../util/EventTarget";
 import { logger } from "../util/Logging";
-import { ESPStateObject } from "./ESPStateObject";
+import { ESPStateEvents, ESPStateObject } from "./ESPStateObject";
+import { Graph } from "./Graph";
+import { Resource } from "./Resource";
 import { Result } from "./Result";
-export { WUStateID }
+import { SourceFile } from "./SourceFile";
+import { Timer } from "./Timer";
+
+export const WUStateID = WsWorkunits.WUStateID;
 
 const _workunits: { [key: string]: Workunit } = {};
 
@@ -14,53 +19,174 @@ export type Partial<T> = {
     [P in keyof T]?: T[P];
 };
 
-type Events = "changed" | "completed";
-export class Workunit {
-    connection: WsWorkunits;
+export interface IWorkunit {
+    Wuid: string;
+    Owner: string;
+    Cluster: string;
+    Jobname: string;
+    StateID: WsWorkunits.WUStateID;
+    State: string;
+    Protected: boolean;
+    DateTimeScheduled: Date;
+    IsPausing: boolean;
+    ThorLCR: boolean;
+    ApplicationValues: WsWorkunits.ApplicationValues;
+    HasArchiveQuery: boolean;
+}
+
+interface XXX {
+    ResultViews: any[];
+    HelpersCount: number;
+}
+
+type WorkunitEvents = "completed" | ESPStateEvents;
+type UWorkunitState = WsWorkunits.ECLWorkunit & WsWorkunits.Workunit & XXX;
+type IWorkunitState = WsWorkunits.ECLWorkunit | WsWorkunits.Workunit | XXX;
+export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> implements WsWorkunits.Workunit {
+    href: string;
+    connection: WsWorkunits.Connection;
     topologyConnection: WsTopology;
-    private _espWorkunit: ESPStateObject<ECLWorkunit & WsWorkunit, ECLWorkunit | WsWorkunit> = new ESPStateObject<ECLWorkunit & WsWorkunit, ECLWorkunit | WsWorkunit>();
-    private _submitAction: WUAction;
+
+    private _submitAction: WsWorkunits.WUAction;
     private _monitorHandle: any;
     private _monitorTickCount: number = 0;
 
     //  Accessors  ---
-    get properties(): ECLWorkunit & WsWorkunit { return this._espWorkunit.get(); }
-    get Wuid(): string { return this._espWorkunit.get("Wuid"); }
-    get Owner(): string { return this._espWorkunit.get("Owner", ""); }
-    get Cluster(): string { return this._espWorkunit.get("Cluster", ""); }
-    get Jobname(): string { return this._espWorkunit.get("Jobname", ""); }
-    get Description(): string { return this._espWorkunit.get("Description", ""); }
-    get ActionEx(): string { return this._espWorkunit.get("ActionEx", ""); }
-    get StateID(): WUStateID { return this._espWorkunit.get("StateID", WUStateID.Unknown); }
-    get State(): string { return WUStateID[this.StateID]; }
-    get Protected(): boolean { return this._espWorkunit.get("Protected", false); }
-    get Exceptions(): ECLException[] { return this._espWorkunit.inner("Exceptions.ECLException", []); }
-    get Results(): Result[] {
-        return this._espWorkunit.inner("Results.ECLResult", []).map((eclResult) => {
-            //  TODO Cache?
-            return new Result(this, eclResult);
+    get properties(): WsWorkunits.ECLWorkunit & WsWorkunits.Workunit { return this.get(); }
+    get Wuid(): string { return this.get("Wuid"); }
+    get Owner(): string { return this.get("Owner", ""); }
+    get Cluster(): string { return this.get("Cluster", ""); }
+    get Jobname(): string { return this.get("Jobname", ""); }
+    get Description(): string { return this.get("Description", ""); }
+    get ActionEx(): string { return this.get("ActionEx", ""); }
+    get StateID(): WsWorkunits.WUStateID { return this.get("StateID", WsWorkunits.WUStateID.Unknown); }
+    get State(): string { return WsWorkunits.WUStateID[this.StateID]; }
+    get Protected(): boolean { return this.get("Protected", false); }
+    get Exceptions(): WsWorkunits.Exceptions { return this.get("Exceptions", { ECLException: [] }); }
+    get Results(): WsWorkunits.Results { return this.get("Results", { ECLResult: [] }); }
+    get ResultViews(): any[] { return this.get("ResultViews", []); }
+    get CResults(): Result[] {
+        return this.Results.ECLResult.map((eclResult) => {
+            return new Result(this.href, this.Wuid, eclResult, this.ResultViews);
         });
     }
-    get Archived(): boolean { return this._espWorkunit.get("Archived"); }
-    get SequenceResults(): ECLResult[] { return this.Results; }
+    get SequenceResults(): { [key: number]: Result } {
+        const retVal = {};
+        this.CResults.forEach((result) => {
+            retVal[result.Sequence] = result;
+        });
+        return retVal;
+    };
+    get Timers(): WsWorkunits.Timers { return this.get("Timers", { ECLTimer: [] }); }
+    get CTimers(): Timer[] {
+        return this.Timers.ECLTimer.map((eclTimer) => {
+            return new Timer(this.href, this.Wuid, eclTimer);
+        });
+    }
+
+    get GraphCount(): number { return this.get("GraphCount", 0); }
+    get Graphs(): WsWorkunits.Graphs { return this.get("Graphs", { ECLGraph: [] }); }
+    get CGraphs(): Graph[] {
+        return this.Graphs.ECLGraph.map((eclGraph) => {
+            return new Graph(this.href, this.Wuid, eclGraph);
+        });
+    }
+    get ThorLogList(): WsWorkunits.ThorLogList { return this.get("ThorLogList"); }
+    get ResourceURLCount(): number { return this.get("ResourceURLCount", 0); }
+    get ResourceURLs(): WsWorkunits.ResourceURLs { return this.get("ResourceURLs", { URL: [] }); }
+    get CResourceURLs(): Resource[] {
+        return this.ResourceURLs.URL.map((url) => {
+            return new Resource(this.href, this.Wuid, url);
+        });
+    }
+    get TotalClusterTime(): string { return this.get("TotalClusterTime", ""); }
+    get DateTimeScheduled(): Date { return this.get("DateTimeScheduled"); }
+    get IsPausing(): boolean { return this.get("IsPausing"); }
+    get ThorLCR(): boolean { return this.get("ThorLCR"); }
+    get ApplicationValues(): WsWorkunits.ApplicationValues { return this.get("ApplicationValues", { ApplicationValue: [] }); }
+    get HasArchiveQuery(): boolean { return this.get("HasArchiveQuery"); }
+    get StateEx(): string { return this.get("StateEx"); }
+    get PriorityClass(): number { return this.get("PriorityClass"); }
+    get PriorityLevel(): number { return this.get("PriorityLevel"); }
+    get Snapshot(): string { return this.get("Snapshot"); }
+    get ResultLimit(): number { return this.get("ResultLimit"); }
+    get EventSchedule(): number { return this.get("EventSchedule"); }
+    get HaveSubGraphTimings(): boolean { return this.get("HaveSubGraphTimings"); }
+    get Query(): WsWorkunits.Query { return this.get("Query"); }
+    get HelpersCount(): number { return this.get("HelpersCount", 0); }
+    get Helpers(): WsWorkunits.Helpers { return this.get("Helpers", { ECLHelpFile: [] }); }
+    get DebugValues(): WsWorkunits.DebugValues { return this.get("DebugValues"); }
+    get AllowedClusters(): WsWorkunits.AllowedClusters { return this.get("AllowedClusters"); }
+    get ErrorCount(): number { return this.get("ErrorCount", 0); }
+    get WarningCount(): number { return this.get("WarningCount", 0); }
+    get InfoCount(): number { return this.get("InfoCount", 0); }
+    get AlertCount(): number { return this.get("AlertCount", 0); }
+    get SourceFileCount(): number { return this.get("SourceFileCount", 0); }
+    get SourceFiles(): WsWorkunits.SourceFiles { return this.get("SourceFiles", { ECLSourceFile: [] }); }
+    get CSourceFiles(): SourceFile[] {
+        return this.SourceFiles.ECLSourceFile.map((eclSourceFile) => {
+            return new SourceFile(this.href, this.Wuid, eclSourceFile);
+        });
+    }
+    get ResultCount(): number { return this.get("ResultCount", 0); }
+    get VariableCount(): number { return this.get("VariableCount", 0); }
+    get Variables(): any { return this.get("Variables", { ECLVariable: [] }); }
+    get TimerCount(): number { return this.get("TimerCount", 0); }
+    get HasDebugValue(): boolean { return this.get("HasDebugValue"); }
+    get ApplicationValueCount(): number { return this.get("ApplicationValueCount", 0); }
+    get XmlParams(): string { return this.get("XmlParams"); }
+    get AccessFlag(): number { return this.get("AccessFlag"); }
+    get ClusterFlag(): number { return this.get("ClusterFlag"); }
+    get ResultViewCount(): number { return this.get("ResultViewCount", 0); }
+    get DebugValueCount(): number { return this.get("DebugValueCount", 0); }
+    get WorkflowCount(): number { return this.get("WorkflowCount", 0); }
+    get Archived(): boolean { return this.get("Archived"); }
+
+    /*
+    get Graphs(): Graph[] {
+        const eclGraphEx = this.inner("Graphs.ECLGraphEx", []);
+        if (this.Timers || this.inner("ApplicationValues.ApplicationValue", [])) {
+            for (let i = 0; i < eclGraphEx.length; ++i) {
+                if (this.Timers) {
+                    eclGraphEx[i].Time = 0;
+                    for (var j = 0; j < this.Timers.length; ++j) {
+                        if (this.Timers[j].GraphName === eclGraphEx[i].Name && !this.Timers[j].HasSubGraphId) {
+                            eclGraphEx[i].Time = this.timers[j].Seconds;
+                            break;
+                        }
+                    }
+                    eclGraphEx[i].Time = Math.round(eclGraphEx[i].Time * 1000) / 1000;
+                }
+                if (this.inner("ApplicationValues.ApplicationValue", false)) {
+                    var idx = context.getApplicationValueIndex("ESPWorkunit.js", eclGraphEx[i].Name + "_SVG");
+                    if (idx >= 0) {
+                        eclGraphEx[i].svg = context.ApplicationValues.ApplicationValue[idx].Value;
+                    }
+                }
+            }
+        }
+        return eclGraphEx;
+    }
+    */
+    // get SequenceResults(): WsWorkunits.ECLResult[] { return this.Results; }
 
     //  Factories  ---
     static create(href: string): Promise<Workunit> {
         const retVal = new Workunit(href);
         return retVal.connection.WUCreate().then((response) => {
             _workunits[response.Workunit.Wuid] = retVal;
-            retVal._espWorkunit.set(response.Workunit);
+            retVal.set(response.Workunit);
             return retVal;
         });
     }
 
-    static attach(href: string, wuid: string, state?: ECLWorkunit | WsWorkunit): Workunit {
+    static attach(href: string, wuid: string, state?: WsWorkunits.ECLWorkunit | WsWorkunits.Workunit): Workunit {
         if (!_workunits[wuid]) {
             _workunits[wuid] = new Workunit(href, wuid);
         }
         const retVal = _workunits[wuid];
         if (state) {
-            retVal._espWorkunit.set(state);
+            retVal.set(state);
         }
         return retVal;
     }
@@ -70,37 +196,41 @@ export class Workunit {
     }
 
     //  ---  ---  ---
-    protected constructor(href?: string, wuid?: string) {
-        this.connection = new WsWorkunits(href);
+    protected constructor(href: string = "", wuid?: string) {
+        super();
+        this.href = href;
+        this.connection = new WsWorkunits.Connection(href);
         this.topologyConnection = new WsTopology(href);
         this.clearState(wuid);
     }
 
     clearState(wuid: string) {
-        this._espWorkunit.clear({
+        this.clear({
             Wuid: wuid,
             StateID: WUStateID.Unknown
         });
         this._monitorTickCount = 0;
     }
 
-    update(request: Partial<WUUpdateRequest>, appData?: any, debugData?: any) {
-        return this.connection.WUUpdate(mixin({}, request, {
-            Wuid: this.Wuid,
-            StateOrig: this.State,
-            JobnameOrig: this.Jobname,
-            DescriptionOrig: this.Description,
-            ProtectedOrig: this.Protected,
-            ClusterOrig: this.Cluster,
-            ApplicationValues: appData,
-            DebugValues: debugData
-        })).then((response) => {
-            this._espWorkunit.set(response.Workunit);
+    update(request: Partial<WsWorkunits.WUUpdateRequest>, appData?: any, debugData?: any) {
+        return this.connection.WUUpdate({
+            ...request, ...{
+                Wuid: this.Wuid,
+                StateOrig: this.State,
+                JobnameOrig: this.Jobname,
+                DescriptionOrig: this.Description,
+                ProtectedOrig: this.Protected,
+                ClusterOrig: this.Cluster,
+                ApplicationValues: appData,
+                DebugValues: debugData
+            }
+        }).then((response) => {
+            this.set(response.Workunit);
             return this;
         });
     }
 
-    submit(_cluster?: string, action: WUAction = WUAction.Run, resultLimit?: number): Promise<Workunit> {
+    submit(_cluster?: string, action: WsWorkunits.WUAction = WsWorkunits.WUAction.Run, resultLimit?: number): Promise<Workunit> {
         let clusterPromise;
         if (_cluster !== void 0) {
             clusterPromise = Promise.resolve(_cluster);
@@ -116,7 +246,7 @@ export class Workunit {
                 Action: action,
                 ResultLimit: resultLimit
             }).then((response) => {
-                this._espWorkunit.set(response.Workunit);
+                this.set(response.Workunit);
                 this._submitAction = action;
                 return this.connection.WUSubmit({ Wuid: this.Wuid, Cluster: cluster }).then(() => {
                     return this;
@@ -128,7 +258,7 @@ export class Workunit {
     isComplete(): boolean {
         switch (this.StateID) {
             case WUStateID.Compiled:
-                return this.ActionEx === "compile" || this._submitAction === WUAction.Compile;
+                return this.ActionEx === "compile" || this._submitAction === WsWorkunits.WUAction.Compile;
             case WUStateID.Completed:
             case WUStateID.Failed:
             case WUStateID.Aborted:
@@ -193,15 +323,15 @@ export class Workunit {
     }
 
     refresh(full: boolean = false): Promise<Workunit> {
-        const retVal: Promise<WUInfoResponse | WUQueryResponse> = full ? this.WUInfo() : this.WUQuery();
+        const retVal: Promise<WsWorkunits.WUInfoResponse | WsWorkunits.WUQueryResponse> = full ? this.WUInfo() : this.WUQuery();
         return retVal.then((response) => {
             return this;
         });
     }
 
-    fetchResults(): Promise<ECLResult[]> {
+    fetchResults(): Promise<Result[]> {
         return this.WUInfo({ IncludeResults: true }).then((response) => {
-            return this.Results;
+            return this.CResults;
         });
     };
 
@@ -213,7 +343,7 @@ export class Workunit {
         }
 
         this._monitorHandle = setTimeout(() => {
-            const refreshPromise: Promise<any> = this._espWorkunit.hasEventListener() ? this.WUInfo() : Promise.resolve(null);
+            const refreshPromise: Promise<any> = this.hasEventListener() ? this.WUInfo() : Promise.resolve(null);
             refreshPromise.then(() => {
                 this._monitor();
             });
@@ -238,26 +368,36 @@ export class Workunit {
     }
 
     //  Events  ---
-    on(id: Events, callback: Function): Workunit {
-        switch (id) {
-            case "changed":
-                this._espWorkunit.on(id, callback);
-                break;
-            case "completed":
-                this._espWorkunit.on("propChanged", "StateID", (changeInfo: IChangedProperty) => {
-                    if (this.isComplete()) {
-                        callback(changeInfo);
-                    }
-                });
-                break;
-            default:
+    on(eventID: WorkunitEvents, propID: Function | keyof UWorkunitState, callback?: Function) {
+        if (this.isCallback(propID)) {
+            callback = propID;
+            switch (eventID) {
+                case "completed":
+                    super.on("propChanged", "StateID", (changeInfo: IChangedProperty) => {
+                        if (this.isComplete()) {
+                            callback(changeInfo);
+                        }
+                    });
+                    break;
+                case "changed":
+                    super.on(eventID, callback);
+                    break;
+                default:
+            }
+        } else {
+            switch (eventID) {
+                case "changed":
+                    super.on(eventID, propID, callback);
+                    break;
+                default:
+            }
         }
         this._monitor();
         return this;
     }
 
     watch(callback: Function) {
-        return this._espWorkunit.on("changed", (changes: IChangedProperty[]) => {
+        return super.on("changed", (changes: IChangedProperty[]) => {
             changes.forEach((changeInfo) => {
                 callback(changeInfo.id, changeInfo.oldValue, changeInfo.newValue);
             });
@@ -265,16 +405,16 @@ export class Workunit {
     }
 
     //  WsWorkunits passthroughs  ---
-    protected WUQuery(_request?: Partial<WUQueryRequest>): Promise<WUQueryResponse> {
-        return this.connection.WUQuery(mixin({}, _request, { Wuid: this.Wuid })).then((response) => {
-            this._espWorkunit.set(response.Workunits.ECLWorkunit[0]);
+    protected WUQuery(_request: Partial<WsWorkunits.WUQueryRequest> = {}): Promise<WsWorkunits.WUQueryResponse> {
+        return this.connection.WUQuery({ ..._request, Wuid: this.Wuid }).then((response) => {
+            this.set(response.Workunits.ECLWorkunit[0]);
             return response;
         }).catch((e: ESPExceptions) => {
             //  deleted  ---
             const wuMissing = e.Exception.some((exception) => {
                 if (exception.Code === 20081) {
                     this.clearState(this.Wuid);
-                    this._espWorkunit.set("StateID", WUStateID.NotFound);
+                    this.set("StateID", WUStateID.NotFound);
                     return true;
                 }
                 return false;
@@ -289,21 +429,38 @@ export class Workunit {
     protected WUCreate() {
         return this.connection.WUCreate().then((response) => {
             _workunits[response.Workunit.Wuid] = this;
-            this._espWorkunit.set(response.Workunit);
+            this.set(response.Workunit);
             return response;
         });
     }
 
-    protected WUInfo(_request?: Partial<WUInfoRequest>): Promise<WUInfoResponse> {
-        return this.connection.WUInfo(mixin({}, _request, { Wuid: this.Wuid })).then((response) => {
-            this._espWorkunit.set(response.Workunit);
+    protected WUInfo(_request: Partial<WsWorkunits.WUInfoRequest> = {}): Promise<WsWorkunits.WUInfoResponse> {
+        const includeResults = _request.IncludeResults || _request.IncludeResultsViewNames;
+        return this.connection.WUInfo({
+            ..._request, Wuid: this.Wuid,
+            IncludeResults: includeResults,
+            IncludeResultsViewNames: includeResults
+        }).then((response) => {
+            if (response.Workunit.ResourceURLCount) {
+                response.Workunit.ResourceURLCount = response.Workunit.ResourceURLCount - 1;
+            }
+            if (response.Workunit.ResourceURLs && response.Workunit.ResourceURLs.URL) {
+                response.Workunit.ResourceURLs.URL = response.Workunit.ResourceURLs.URL.filter((row, idx) => {
+                    return idx > 0;
+                });
+            }
+            this.set(response.Workunit);
+            this.set({
+                ResultViews: includeResults ? response.ResultViews : [],
+                HelpersCount: response.Workunit.Helpers && response.Workunit.Helpers.ECLHelpFile ? response.Workunit.Helpers.ECLHelpFile.length : 0
+            });
             return response;
         }).catch((e: ESPExceptions) => {
             //  deleted  ---
             const wuMissing = e.Exception.some((exception) => {
                 if (exception.Code === 20080) {
                     this.clearState(this.Wuid);
-                    this._espWorkunit.set("StateID", WUStateID.NotFound);
+                    this.set("StateID", WUStateID.NotFound);
                     return true;
                 }
                 return false;
@@ -315,7 +472,7 @@ export class Workunit {
         });
     }
 
-    protected WUAction(actionType: WUActionType): Promise<WUActionResponse> {
+    protected WUAction(actionType: WsWorkunits.WUActionType): Promise<WsWorkunits.WUActionResponse> {
         return this.connection.WUAction({
             Wuids: [this.Wuid],
             WUActionType: actionType
@@ -327,7 +484,7 @@ export class Workunit {
         });
     }
 
-    protected WUResubmit(clone: boolean, resetWorkflow: boolean): Promise<WUResubmitResponse> {
+    protected WUResubmit(clone: boolean, resetWorkflow: boolean): Promise<WsWorkunits.WUResubmitResponse> {
         return this.connection.WUResubmit({
             Wuids: [this.Wuid],
             CloneWorkunit: clone,
@@ -348,14 +505,14 @@ export class WorkunitMonitor {
     private wu: Workunit;
     private id: string;
     private monitorID: string;
-
+ 
     constructor(wu: Workunit, monitorID: string, callback: Function) {
         this.id = "WorkunitMonitor_" + ++gID;
         this.monitorID = monitorID;
         this.wu = wu;
         this.wu.on(`${monitorID}.${this.id}`, callback);
     }
-
+ 
     dispose() {
         this.wu.on(`${this.monitorID}.${this.id}`, null);
     }
@@ -368,34 +525,8 @@ export function unitTest() {
     const VM_HOST: string = "http://192.168.3.22:8010";
     // const VM_URL: string = "http://192.168.3.22:8010/WsWorkunits";
     // const PUBLIC_URL: string = "http://52.51.90.23:8010/WsWorkunits";
-
-    describe("ESPStateObject", function () {
-        interface ITest {
-            aaa: string;
-            bbb: number;
-        }
-        const stateObj = new ESPStateObject<ITest, ITest>();
-        stateObj.on("changed", (changes) => {
-            // console.log(`changed:  ${JSON.stringify(changes)}`);
-        });
-        it("basic", function () {
-            expect(stateObj.has("aaa")).to.be.false;
-            expect(stateObj.get("aaa")).to.be.undefined;
-            stateObj.set("aaa", "abc");
-            expect(stateObj.has("aaa")).to.be.true;
-            expect(stateObj.get("aaa")).to.be.defined;
-            expect(stateObj.get("aaa")).to.be.string;
-            stateObj.set("bbb", 123);
-            expect(stateObj.get("bbb")).to.be.number;
-            stateObj.set({ aaa: "hello", bbb: 123 });
-        });
-        // console.log(`get(aaa):  ${JSON.stringify(stateObj.get("aaa"))}`);
-        // console.log(`get(bbb):  ${JSON.stringify(stateObj.get("bbb"))}`);
-        // console.log(`get:  ${JSON.stringify(stateObj.get())}`);
-    });
-
     describe("Workunit", function () {
-        describe("simple life cycle", function () {
+        describe.only("simple life cycle", function () {
             let wu1: Workunit;
             it("creation", function () {
                 return Workunit.create(VM_HOST).then((wu) => {
@@ -433,7 +564,7 @@ export function unitTest() {
                 });
             });
         });
-        describe.only("XSD Parsing", function () {
+        describe("XSD Parsing", function () {
             it("basic", function () {
                 const wu = Workunit.attach(VM_HOST, "W20170208-123106");
                 let result;
@@ -452,33 +583,4 @@ export function unitTest() {
             });
         });
     });
-    /*
-    return server.create().then((wu) => {
-        expect(wu).is.not.undefined;
-        expect(wu.wuid).is.not.undefined;
-        wu.on("StateIDChanged.logger", (stateID: WUStateID) => {
-            console.log(wu.wuid + "-" + wu.state);
-        });
-        return wu;
-    }).then((wu) => {
-        return wu.ecl(testECL);
-    }).then((wu) => {
-        expect(wu.ecl()).equals(testECL);
-        return wu.submit("hthor");
-    }).then((wu) => {
-        return new Promise<Workunit>((resolve, reject) => {
-            if (wu.isComplete()) {
-                resolve(wu);
-            } else {
-                wu.on("StateIDChanged", (stateID: WUStateID) => {
-                    if (wu.isComplete()) {
-                        resolve(wu);
-                    }
-                });
-            }
-        });
-    }).then((wu) => {
-        return wu.delete();
-    });
-    */
 }

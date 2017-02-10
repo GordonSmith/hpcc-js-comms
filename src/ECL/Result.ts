@@ -2,31 +2,40 @@ import { Promise } from "es6-promise";
 import { exists } from "../connections/ESPConnection";
 import { DFULogicalFile } from "../connections/WsDFU";
 import { ECLResult, ECLSchemas, WUResultRequest } from "../connections/WsWorkunits";
+import { Connection } from "../connections/WsWorkunits";
 import { parseXSD, XSDSchema } from "../util/SAXParser";
 import { ESPStateObject } from "./ESPStateObject";
-import { Workunit } from "./Workunit";
 
-export class Result {
-    wu: Workunit;
-    private _espResult: ESPStateObject<ECLResult & DFULogicalFile, ECLResult | DFULogicalFile> = new ESPStateObject<ECLResult & DFULogicalFile, ECLResult | DFULogicalFile>();
-    xsdSchema: XSDSchema;
+export interface ECLResultEx extends ECLResult {
+    Wuid: string;
+    ResultViews: any[];
+}
+export class Result extends ESPStateObject<ECLResultEx & DFULogicalFile, ECLResultEx | DFULogicalFile> implements ECLResultEx {
+    protected connection: Connection;
+    protected xsdSchema: XSDSchema;
 
-    get properties(): ECLResult { return this._espResult.get(); }
-    get Wuid(): string { return this.wu.Wuid; }
-    get Name(): string { return this._espResult.get("Name"); }
-    get Sequence(): number { return this._espResult.get("Sequence"); }
-    get Value(): string { return this._espResult.get("Value"); }
-    get Link(): string { return this._espResult.get("Link"); }
-    get FileName(): string { return this._espResult.get("FileName"); }
-    get IsSupplied(): boolean { return this._espResult.get("IsSupplied"); }
-    get ShowFileContent(): boolean { return this._espResult.get("ShowFileContent"); }
-    get Total(): number { return this._espResult.get("Total"); }
-    get ECLSchemas(): ECLSchemas { return this._espResult.get("ECLSchemas"); }
-    get NodeGroup(): string { return this._espResult.get("NodeGroup"); }
+    get properties(): ECLResult { return this.get(); }
+    get Wuid(): string { return this.get("Wuid"); }
+    get Name(): string { return this.get("Name"); }
+    get Sequence(): number { return this.get("Sequence"); }
+    get Value(): string { return this.get("Value"); }
+    get Link(): string { return this.get("Link"); }
+    get FileName(): string { return this.get("FileName"); }
+    get IsSupplied(): boolean { return this.get("IsSupplied"); }
+    get ShowFileContent() { return this.get("ShowFileContent"); }
+    get Total(): number { return this.get("Total"); }
+    get ECLSchemas(): ECLSchemas { return this.get("ECLSchemas"); }
+    get NodeGroup(): string { return this.get("NodeGroup"); }
+    get ResultViews(): any[] { return this.get("ResultViews"); }
 
-    constructor(wu: Workunit, eclResult: ECLResult) {
-        this.wu = wu;
-        this._espResult.set(eclResult);
+    constructor(href: string, wuid: string, eclResult: ECLResult, resultViews: any[]) {
+        super();
+        this.connection = new Connection(href);
+        this.set({
+            Wuid: wuid,
+            ResultViews: resultViews,
+            ...eclResult
+        });
     }
 
     fetchXMLSchema(): Promise<XSDSchema> {
@@ -65,7 +74,7 @@ export class Result {
         request.Start = start;
         request.Count = count;
         request.SuppressXmlSchema = suppressXmlSchema;
-        return this.wu.connection.WUResult(request).then((response) => {
+        return this.connection.WUResult(request).then((response) => {
             return response;
         });
     }

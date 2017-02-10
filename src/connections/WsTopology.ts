@@ -1,5 +1,5 @@
 import { Promise } from "es6-promise";
-import { ESPConnection, mixin, ResponseType } from "./ESPConnection";
+import { ESPConnection } from "./ESPConnection";
 
 export interface EclServerQueueRequest {
     EclServerQueue?: string;

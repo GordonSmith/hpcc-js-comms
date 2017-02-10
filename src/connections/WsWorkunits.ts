@@ -1,5 +1,5 @@
 import { Promise } from "es6-promise";
-import { ESPConnection, mixin, ResponseType } from "./ESPConnection";
+import { ESPConnection, ResponseType } from "./ESPConnection";
 
 export enum WUStateID {
     Unknown = 0,
@@ -86,6 +86,8 @@ export interface ECLTimer {
     Name: string;
     Value: string;
     count: number;
+    GraphName: string;
+    SubGraphId?: number;
 }
 
 export interface Timers {
@@ -129,7 +131,7 @@ export interface Exceptions {
     ECLException: ECLException[];
 }
 
-export interface WorkunitBase {
+export interface ECLWorkunit {
     Wuid: string;
     Owner: string;
     Cluster: string;
@@ -140,19 +142,48 @@ export interface WorkunitBase {
     DateTimeScheduled: Date;
     IsPausing: boolean;
     ThorLCR: boolean;
+    TotalClusterTime: string;
     ApplicationValues: ApplicationValues;
     HasArchiveQuery: boolean;
-}
-
-export interface ECLWorkunit extends WorkunitBase {
-    TotalClusterTime: string;
 }
 
 export function isECLWorkunit(_: ECLWorkunit | Workunit): _ is ECLWorkunit {
     return (<ECLWorkunit>_).TotalClusterTime !== undefined;
 }
 
-export interface Workunit extends WorkunitBase {
+export interface ThorLogInfo {
+    ProcessName: string;
+    ClusterGroup: string;
+    LogDate: string;
+    NumberSlaves: number;
+}
+
+export interface ThorLogList {
+    ThorLogInfo: ThorLogInfo[];
+}
+
+export interface ResourceURLs {
+    URL: string[];
+}
+
+export interface Variables {
+    ECLVariable: any[];
+}
+
+export interface ECLGraph {
+    Name: string;
+    Label: string;
+    Type: string;
+    Complete: boolean;
+    WhenStarted: Date;
+    WhenFinished: Date;
+}
+
+export interface Graphs {
+    ECLGraph: ECLGraph[];
+}
+
+export interface Workunit extends ECLWorkunit {
     StateEx: string;
     ActionEx: string;
     Description: string;
@@ -176,8 +207,10 @@ export interface Workunit extends WorkunitBase {
     AlertCount: number;
     GraphCount: number;
     SourceFileCount: number;
+    SourceFiles: SourceFiles;
     ResultCount: number;
     VariableCount: number;
+    Variables: Variables;
     TimerCount: number;
     HasDebugValue: boolean;
     ApplicationValueCount: number;
@@ -188,10 +221,43 @@ export interface Workunit extends WorkunitBase {
     ResourceURLCount: number;
     DebugValueCount: number;
     WorkflowCount: number;
+    Graphs: Graphs;
+    ThorLogList: ThorLogList;
+    ResourceURLs: ResourceURLs;
 }
 
 export function isWorkunit(_: ECLWorkunit | Workunit): _ is Workunit {
     return (<Workunit>_).StateEx !== undefined;
+}
+
+export interface WUInfoRequest {
+    Wuid: string;
+    TruncateEclTo64k?: boolean;
+    Type?: string;
+    IncludeExceptions?: boolean;
+    IncludeGraphs?: boolean;
+    IncludeSourceFiles?: boolean;
+    IncludeResults?: boolean;
+    IncludeResultsViewNames?: boolean;
+    IncludeVariables?: boolean;
+    IncludeTimers?: boolean;
+    IncludeDebugValues?: boolean;
+    IncludeApplicationValues?: boolean;
+    IncludeWorkflows?: boolean;
+    IncludeXmlSchemas?: boolean;
+    IncludeResourceURLs?: boolean;
+    SuppressResultSchemas?: boolean;
+    ThorSlaveIP?: string;
+}
+
+export interface ECLSourceFile {
+    FileCluster: string;
+    Name: string;
+    Count: number;
+}
+
+export interface SourceFiles {
+    ECLSourceFile: ECLSourceFile[];
 }
 
 export interface WUInfoResponse {
@@ -243,26 +309,6 @@ export interface WUQueryResponse {
 
 export interface WUCreateResponse {
     Workunit: Workunit;
-}
-
-export interface WUInfoRequest {
-    Wuid: string;
-    TruncateEclTo64k?: boolean;
-    Type?: string;
-    IncludeExceptions?: boolean;
-    IncludeGraphs?: boolean;
-    IncludeSourceFiles?: boolean;
-    IncludeResults?: boolean;
-    IncludeResultsViewNames?: boolean;
-    IncludeVariables?: boolean;
-    IncludeTimers?: boolean;
-    IncludeDebugValues?: boolean;
-    IncludeApplicationValues?: boolean;
-    IncludeWorkflows?: boolean;
-    IncludeXmlSchemas?: boolean;
-    IncludeResourceURLs?: boolean;
-    SuppressResultSchemas?: boolean;
-    ThorSlaveIP?: string;
 }
 
 export interface WUListQueriesRequest {
@@ -449,14 +495,14 @@ export interface Result {
     Message?: any;
 }
 
-export interface Results {
+export interface Results2 {
     Result: Result[];
 }
 
 export interface WUQuerySetQueryActionResponse {
     Action: string;
     QuerySetName: string;
-    Results: Results;
+    Results: Results2;
 }
 
 export interface WUQuerySetAliasActionRequest {
@@ -531,12 +577,12 @@ export interface ECLGraphEx {
     Complete: boolean;
 }
 
-export interface Graphs {
+export interface GraphsEx {
     ECLGraphEx: ECLGraphEx[];
 }
 
 export interface WUGetGraphResponse {
-    Graphs: Graphs;
+    Graphs: GraphsEx;
 }
 
 export interface WUResultRequest {
@@ -654,7 +700,7 @@ export interface WUCDebugRequest {
 export interface WUCDebugResponse {
 }
 
-export class WsWorkunits extends ESPConnection {
+export class Connection extends ESPConnection {
     constructor(href: string = "") {
         super(`${href}/WsWorkunits`);
     }
@@ -679,9 +725,9 @@ export class WsWorkunits extends ESPConnection {
             IncludeWorkflows: false,
             IncludeXmlSchemas: false,
             IncludeResourceURLs: false,
-            SuppressResultSchemas: true
+            SuppressResultSchemas: true,
+            ..._request
         };
-        mixin(request, _request);
         return this.send("WUInfo", request);
     }
 

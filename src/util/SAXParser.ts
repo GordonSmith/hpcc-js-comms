@@ -170,6 +170,48 @@ export class XSDSimpleType extends XSDNode {
 export class XSDSchema {
     root: XSDElement;
     simpleTypes: { [name: string]: XSDSimpleType } = {};
+
+    calcWidth(type, name) {
+        let retVal: number = -1;
+
+        switch (type) {
+            case "xs:boolean":
+                retVal = 5;
+                break;
+            case "xs:integer":
+                retVal = 8;
+                break;
+            case "xs:nonNegativeInteger":
+                retVal = 8;
+                break;
+            case "xs:double":
+                retVal = 8;
+                break;
+            case "xs:string":
+                retVal = 32;
+                break;
+            default:
+                const numStr: string = "0123456789";
+                const underbarPos: number = type.lastIndexOf("_");
+                const length: number = underbarPos > 0 ? underbarPos : type.length;
+                let i: number = length - 1;
+                for (; i >= 0; --i) {
+                    if (numStr.indexOf(type.charAt(i)) === -1)
+                        break;
+                }
+                if (i + 1 < length) {
+                    retVal = parseInt(type.substring(i + 1, length), 10);
+                }
+                if (type.indexOf("data") === 0) {
+                    retVal *= 2;
+                }
+                break;
+        }
+        if (retVal < name.length)
+            retVal = name.length;
+
+        return retVal;
+    }
 }
 
 class XSDParser extends SAXStackParser {
@@ -229,8 +271,8 @@ declare function expect(...args): any;
 export function unitTest() {
     describe("SAXParser", function () {
         it("basic", function () {
-            const p = new SAXStackParser();
-            p.parse("<xml>Hello, <who name='world'>world</who>!</xml>");
+            const x = parseXSD("<xml>Hello, <who name='world'>world</who>!</xml>");
+            expect(x).exists;
         });
     });
 }

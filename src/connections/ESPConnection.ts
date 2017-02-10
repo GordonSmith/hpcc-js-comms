@@ -17,28 +17,40 @@ export function exists(prop: string, obj: Object): boolean {
     return inner(prop, obj) !== undefined;
 };
 
-export function mixin(target: any, ...args: any[]) {
-    if (target == null) {
-        throw new TypeError("Cannot convert undefined or null to object");
-    }
-
-    const to = Object(target);
-    for (const nextSource of args) {
-        if (nextSource != null) { // Skip over if undefined or null
-            for (const nextKey in nextSource) {
-                // Avoid bugs when hasOwnProperty is shadowed
-                if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) {
-                    to[nextKey] = nextSource[nextKey];
-                }
-            }
-        }
-    }
-    return to;
-};
-
 export function isArray(arg: any) {
     return Object.prototype.toString.call(arg) === "[object Array]";
 };
+
+export function espTime2Seconds(duration) {
+    if (!duration) {
+        return 0;
+    } else if (!isNaN(duration)) {
+        return parseFloat(duration);
+    }
+    //  GH:  <n>ns or <m>ms or <s>s or [<d> days ][<h>:][<m>:]<s>[.<ms>]
+    const nsIndex = duration.indexOf("ns");
+    if (nsIndex !== -1) {
+        return parseFloat(duration.substr(0, nsIndex)) / 1000000000;
+    }
+    const msIndex = duration.indexOf("ms");
+    if (msIndex !== -1) {
+        return parseFloat(duration.substr(0, msIndex)) / 1000;
+    }
+    const sIndex = duration.indexOf("s");
+    if (sIndex !== -1 && duration.indexOf("days") === -1) {
+        return parseFloat(duration.substr(0, sIndex));
+    }
+
+    const dayTimeParts = duration.split(" days ");
+    const days = parseFloat(dayTimeParts.length > 1 ? dayTimeParts[0] : 0.0);
+    const time = dayTimeParts.length > 1 ? dayTimeParts[1] : dayTimeParts[0];
+    let secs = 0.0;
+    const timeParts = time.split(":").reverse();
+    for (let j = 0; j < timeParts.length; ++j) {
+        secs += parseFloat(timeParts[j]) * Math.pow(60, j);
+    }
+    return (days * 24 * 60 * 60) + secs;
+}
 
 export interface Exception {
     Code: number;
@@ -72,7 +84,7 @@ export enum ResponseType {
 }
 
 export class ESPConnection extends Connection {
-    readonly href: string;
+    private readonly href: string;
 
     constructor(href: string) {
         super();
@@ -146,4 +158,27 @@ export class ESPConnection extends Connection {
         }
         return target;
     }
+}
+
+//  Unit Tests ---
+declare function expect(...args): any;
+export function unitTest() {
+    describe("ESPConnection", function () {
+        it("espTime2SecondsTests", function () {
+            const tests = [
+                { str: "1.1s", expected: 1.1 },
+                { str: "2.2ms", expected: 0.0022 },
+                { str: "3.3ns", expected: 0.0000000033 },
+                { str: "4.4", expected: 4.4 },
+                { str: "5:55.5", expected: 355.5 },
+                { str: "6:06:06.6", expected: 21966.6 },
+                { str: "6:06:6.6", expected: 21966.6 },
+                { str: "6:6:6.6", expected: 21966.6 },
+                { str: "7 days 7:07:7.7", expected: 630427.7 }
+            ];
+            tests.forEach(function (test, idx) {
+                expect(espTime2Seconds(test.str)).equals(test.expected);
+            }, this);
+        });
+    });
 }
