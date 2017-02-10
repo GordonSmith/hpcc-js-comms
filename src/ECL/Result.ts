@@ -38,6 +38,10 @@ export class Result extends ESPStateObject<ECLResultEx & DFULogicalFile, ECLResu
         });
     }
 
+    isComplete() {
+        return this.Total !== -1;
+    }
+
     fetchXMLSchema(): Promise<XSDSchema> {
         if (this.xsdSchema) {
             return Promise.resolve(this.xsdSchema);
