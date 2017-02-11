@@ -4,35 +4,23 @@ import { WsTopology } from "../connections/WsTopology";
 import * as WsWorkunits from "../connections/WsWorkunits";
 import { IChangedProperty } from "../util/EventTarget";
 import { logger } from "../util/Logging";
-import { ESPStateEvents, ESPStateObject } from "./ESPStateObject";
-import { Graph } from "./Graph";
+import { Cache, ESPStateEvents, ESPStateObject } from "./ESPStateObject";
+import { Graph, GraphCache } from "./Graph";
 import { Resource } from "./Resource";
-import { Result } from "./Result";
+import { Result, ResultCache } from "./Result";
 import { SourceFile } from "./SourceFile";
 import { Timer } from "./Timer";
 
 export const WUStateID = WsWorkunits.WUStateID;
 
-const _workunits: { [key: string]: Workunit } = {};
-
-export type Partial<T> = {
-    [P in keyof T]?: T[P];
-};
-
-export interface IWorkunit {
-    Wuid: string;
-    Owner: string;
-    Cluster: string;
-    Jobname: string;
-    StateID: WsWorkunits.WUStateID;
-    State: string;
-    Protected: boolean;
-    DateTimeScheduled: Date;
-    IsPausing: boolean;
-    ThorLCR: boolean;
-    ApplicationValues: WsWorkunits.ApplicationValues;
-    HasArchiveQuery: boolean;
+export class WorkunitCache extends Cache<{ Wuid: string }, Workunit>{
+    constructor() {
+        super((obj) => {
+            return obj.Wuid;
+        });
+    }
 }
+const _workunits = new WorkunitCache();
 
 interface XXX {
     ResultViews: any[];
@@ -63,11 +51,16 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     get State(): string { return WsWorkunits.WUStateID[this.StateID]; }
     get Protected(): boolean { return this.get("Protected", false); }
     get Exceptions(): WsWorkunits.Exceptions { return this.get("Exceptions", { ECLException: [] }); }
-    get Results(): WsWorkunits.Results { return this.get("Results", { ECLResult: [] }); }
     get ResultViews(): any[] { return this.get("ResultViews", []); }
+
+    private _resultCache = new ResultCache();
+    get ResultCount(): number { return this.get("ResultCount", 0); }
+    get Results(): WsWorkunits.Results { return this.get("Results", { ECLResult: [] }); }
     get CResults(): Result[] {
         return this.Results.ECLResult.map((eclResult) => {
-            return new Result(this.href, this.Wuid, eclResult, this.ResultViews);
+            return this._resultCache.get(eclResult, () => {
+                return new Result(this.href, this.Wuid, eclResult, this.ResultViews);
+            });
         });
     }
     get SequenceResults(): { [key: number]: Result } {
@@ -84,11 +77,14 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
         });
     }
 
+    private _graphCache = new GraphCache();
     get GraphCount(): number { return this.get("GraphCount", 0); }
     get Graphs(): WsWorkunits.Graphs { return this.get("Graphs", { ECLGraph: [] }); }
     get CGraphs(): Graph[] {
         return this.Graphs.ECLGraph.map((eclGraph) => {
-            return new Graph(this.href, this.Wuid, eclGraph);
+            return this._graphCache.get(eclGraph, () => {
+                return new Graph(this.href, this.Wuid, eclGraph, this.CTimers);
+            });
         });
     }
     get ThorLogList(): WsWorkunits.ThorLogList { return this.get("ThorLogList"); }
@@ -128,7 +124,6 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
             return new SourceFile(this.href, this.Wuid, eclSourceFile);
         });
     }
-    get ResultCount(): number { return this.get("ResultCount", 0); }
     get VariableCount(): number { return this.get("VariableCount", 0); }
     get Variables(): any { return this.get("Variables", { ECLVariable: [] }); }
     get TimerCount(): number { return this.get("TimerCount", 0); }
@@ -142,49 +137,20 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     get WorkflowCount(): number { return this.get("WorkflowCount", 0); }
     get Archived(): boolean { return this.get("Archived"); }
 
-    /*
-    get Graphs(): Graph[] {
-        const eclGraphEx = this.inner("Graphs.ECLGraphEx", []);
-        if (this.Timers || this.inner("ApplicationValues.ApplicationValue", [])) {
-            for (let i = 0; i < eclGraphEx.length; ++i) {
-                if (this.Timers) {
-                    eclGraphEx[i].Time = 0;
-                    for (var j = 0; j < this.Timers.length; ++j) {
-                        if (this.Timers[j].GraphName === eclGraphEx[i].Name && !this.Timers[j].HasSubGraphId) {
-                            eclGraphEx[i].Time = this.timers[j].Seconds;
-                            break;
-                        }
-                    }
-                    eclGraphEx[i].Time = Math.round(eclGraphEx[i].Time * 1000) / 1000;
-                }
-                if (this.inner("ApplicationValues.ApplicationValue", false)) {
-                    var idx = context.getApplicationValueIndex("ESPWorkunit.js", eclGraphEx[i].Name + "_SVG");
-                    if (idx >= 0) {
-                        eclGraphEx[i].svg = context.ApplicationValues.ApplicationValue[idx].Value;
-                    }
-                }
-            }
-        }
-        return eclGraphEx;
-    }
-    */
-    // get SequenceResults(): WsWorkunits.ECLResult[] { return this.Results; }
-
     //  Factories  ---
     static create(href: string): Promise<Workunit> {
         const retVal = new Workunit(href);
         return retVal.connection.WUCreate().then((response) => {
-            _workunits[response.Workunit.Wuid] = retVal;
+            _workunits.set(retVal);
             retVal.set(response.Workunit);
             return retVal;
         });
     }
 
     static attach(href: string, wuid: string, state?: WsWorkunits.ECLWorkunit | WsWorkunits.Workunit): Workunit {
-        if (!_workunits[wuid]) {
-            _workunits[wuid] = new Workunit(href, wuid);
-        }
-        const retVal = _workunits[wuid];
+        const retVal = _workunits.get({ Wuid: wuid }, () => {
+            return new Workunit(href, wuid);
+        });
         if (state) {
             retVal.set(state);
         }
@@ -192,7 +158,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     }
 
     static exists(wuid: string): boolean {
-        return !!_workunits[wuid];
+        return _workunits.has({ Wuid: wuid });
     }
 
     //  ---  ---  ---
@@ -428,8 +394,8 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
 
     protected WUCreate() {
         return this.connection.WUCreate().then((response) => {
-            _workunits[response.Workunit.Wuid] = this;
             this.set(response.Workunit);
+            _workunits.set(this);
             return response;
         });
     }

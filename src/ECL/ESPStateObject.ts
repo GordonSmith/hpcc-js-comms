@@ -109,13 +109,69 @@ export class ESPStateObject<U, I> {
     }
 }
 
+export class Cache<I, C> {
+    private _cache: { [id: string]: C } = {};
+    private _calcID: (espObj: I | C) => string;
+
+    static hash(...args) {
+        return sum(...args);
+    }
+
+    constructor(calcID: (espObj: I | C) => string) {
+        this._calcID = calcID;
+    }
+
+    has(espObj: I): boolean {
+        return this._calcID(espObj) in this._cache;
+    }
+
+    set(obj: C): C {
+        this._cache[this._calcID(obj)] = obj;
+        return obj;
+    }
+
+    get(espObj: I, factory: () => C): C {
+        const retVal = this._cache[this._calcID(espObj)];
+        if (!retVal) {
+            return this.set(factory());
+        }
+        return retVal;
+    }
+}
+
 declare function expect(...args): any;
 export function unitTest() {
     const VM_HOST: string = "http://192.168.3.22:8010";
     // const VM_URL: string = "http://192.168.3.22:8010/WsWorkunits";
     // const PUBLIC_URL: string = "http://52.51.90.23:8010/WsWorkunits";
+    describe.only("Cache", function () {
+        it("basic", function () {
+            class MyClass {
+                id: string;
+                id2: string;
 
-    describe.only("ESPStateObject", function () {
+                constructor(id, id2) {
+                    this.id = id;
+                    this.id2 = id2;
+                }
+            }
+            const myCache = new Cache<{ id: string }, MyClass>((obj) => {
+                return Cache.hash([obj.id]);
+            });
+            expect(myCache.has({ id: "007" })).is.false;
+            const tmp = myCache.get({ id: "007" }, () => {
+                return new MyClass("007", "a");
+            });
+            expect(myCache.has({ id: "007" })).is.true;
+            expect(tmp.id2).equals("a");
+            const tmp2 = myCache.get({ id: "007" }, () => {
+                throw new Error("Should Not Happend");
+            });
+            expect(tmp2.id2).equals("a");
+        });
+    });
+
+    describe("ESPStateObject", function () {
         interface ITest {
             aaa: string;
             bbb: number;

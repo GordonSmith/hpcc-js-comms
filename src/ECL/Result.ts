@@ -1,10 +1,11 @@
 import { Promise } from "es6-promise";
+import * as sum from "hash-sum";
 import { exists } from "../connections/ESPConnection";
 import { DFULogicalFile } from "../connections/WsDFU";
 import { ECLResult, ECLSchemas, WUResultRequest } from "../connections/WsWorkunits";
 import { Connection } from "../connections/WsWorkunits";
 import { parseXSD, XSDSchema } from "../util/SAXParser";
-import { ESPStateObject } from "./ESPStateObject";
+import { Cache, ESPStateObject } from "./ESPStateObject";
 
 export interface ECLResultEx extends ECLResult {
     Wuid: string;
@@ -80,6 +81,14 @@ export class Result extends ESPStateObject<ECLResultEx & DFULogicalFile, ECLResu
         request.SuppressXmlSchema = suppressXmlSchema;
         return this.connection.WUResult(request).then((response) => {
             return response;
+        });
+    }
+}
+
+export class ResultCache extends Cache<ECLResult, Result>{
+    constructor() {
+        super((obj) => {
+            return Cache.hash([obj.Sequence, obj.Name, obj.FileName]);
         });
     }
 }
