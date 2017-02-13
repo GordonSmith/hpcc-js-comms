@@ -5,7 +5,7 @@ import { Connection, ConnectionError, VERB } from "./Connection";
 export function inner(prop: string, obj: any): any {
     if (prop === void 0 || obj === void 0) return void 0;
     for (const item of prop.split(".")) {
-        if (obj[item] === undefined) {
+        if (!obj.hasOwnProperty(item)) {
             return undefined;
         }
         obj = obj[item];
@@ -91,45 +91,43 @@ export class ESPConnection extends Connection {
         this.href = href;
     }
 
-    protected transmit(verb: VERB, action: string, form: any, responseType: ResponseType = ResponseType.JSON): Promise<any> {
-        return super.transmit(verb, this.href + "/" + action + ".json", form).then((_response) => {
-            switch (responseType) {
-                case ResponseType.JSON:
-                    let response;
-                    try {
-                        response = JSON.parse(_response);
-                    } catch (e) {
-                        throw new ESPExceptions(action, form, {
-                            Source: "ESPConnection.transmit",
-                            Exception: [{ Code: 0, Message: "Invalid JSON" }]
-                        });
-                    }
-                    if (response.Exceptions) {
-                        throw new ESPExceptions(action, form, response.Exceptions);
-                    }
-                    const retVal = response[`${action}Response`];
-                    if (!retVal) {
-                        throw new ESPExceptions(action, form, {
-                            Source: "ESPConnection.transmit",
-                            Exception: [{ Code: 0, Message: "Missing Response" }]
-                        });
-                    }
-                    return retVal;
-                case ResponseType.TEXT:
-                default:
-                    return _response;
+    protected transmit(verb: VERB, action: string, request: Object, jsonContent: boolean = true): Promise<any> {
+        return super.transmit(verb, this.href + "/" + action + ".json", request, false).then((_response) => {
+            if (jsonContent) {
+                let response;
+                try {
+                    response = JSON.parse(_response);
+                } catch (e) {
+                    throw new ESPExceptions(action, request, {
+                        Source: "ESPConnection.transmit",
+                        Exception: [{ Code: 0, Message: "Invalid JSON" }]
+                    });
+                }
+                if (response.Exceptions) {
+                    throw new ESPExceptions(action, request, response.Exceptions);
+                }
+                const retVal = response[`${action}Response`];
+                if (!retVal) {
+                    throw new ESPExceptions(action, request, {
+                        Source: "ESPConnection.transmit",
+                        Exception: [{ Code: 0, Message: "Missing Response" }]
+                    });
+                }
+                return retVal;
+            } else {
+                return _response;
             }
         }).catch((e) => {
             if (e.isESPExceptions) {
                 throw e;
             }
             if (e instanceof ConnectionError) {
-                throw new ESPExceptions(action, form, {
+                throw new ESPExceptions(action, request, {
                     Source: "Connection.transmit",
                     Exception: [{ Code: 0, Message: "ConnectionError" }]
                 }, e.info);
             }
-            throw new ESPExceptions(action, form, {
+            throw new ESPExceptions(action, request, {
                 Source: "Connection.transmit",
                 Exception: [{ Code: 0, Message: "Unknown exception" }]
             }, e);
@@ -146,7 +144,7 @@ export class ESPConnection extends Connection {
     }
 
     send(href: string, form: any = {}, responseType: ResponseType = ResponseType.JSON): Promise<any> {
-        return this.transmit(this.defaultMode, href, form, responseType);
+        return this.transmit(this.defaultMode, href, form, responseType === ResponseType.JSON);
     }
 
     toESPStringArray(target: any, arrayName: string): Object {
@@ -158,27 +156,4 @@ export class ESPConnection extends Connection {
         }
         return target;
     }
-}
-
-//  Unit Tests ---
-declare function expect(...args): any;
-export function unitTest() {
-    describe("ESPConnection", function () {
-        it("espTime2SecondsTests", function () {
-            const tests = [
-                { str: "1.1s", expected: 1.1 },
-                { str: "2.2ms", expected: 0.0022 },
-                { str: "3.3ns", expected: 0.0000000033 },
-                { str: "4.4", expected: 4.4 },
-                { str: "5:55.5", expected: 355.5 },
-                { str: "6:06:06.6", expected: 21966.6 },
-                { str: "6:06:6.6", expected: 21966.6 },
-                { str: "6:6:6.6", expected: 21966.6 },
-                { str: "7 days 7:07:7.7", expected: 630427.7 }
-            ];
-            tests.forEach(function (test, idx) {
-                expect(espTime2Seconds(test.str)).equals(test.expected);
-            }, this);
-        });
-    });
 }

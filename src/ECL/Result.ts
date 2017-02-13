@@ -49,7 +49,7 @@ export class Result extends ESPStateObject<ECLResultEx & DFULogicalFile, ECLResu
         }
         return this.WUResult().then((response) => {
             if (exists("Result.XmlSchema.xml", response)) {
-                this.xsdSchema = parseXSD("<xsd>" + response.Result.XmlSchema.xml + "</xsd>");
+                this.xsdSchema = parseXSD(response.Result.XmlSchema.xml);
                 return this.xsdSchema;
             }
             return this;

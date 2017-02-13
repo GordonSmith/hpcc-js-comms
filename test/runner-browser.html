@@ -6,99 +6,32 @@
     <title>HPCC Systems - Test</title>
 
     <link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
-
-    <!-- -->
-    <script src="../node_modules/requirejs/require.js"></script>
+    <script src="../node_modules/mocha/mocha.js"></script>
     <script>
-        requirejs.config({
-            baseUrl: '.',
-            paths: {
-                "es6-promise": "../node_modules/es6-promise/dist/es6-promise",
-                "d3-request": "../node_modules/d3-request/build/d3-request",
-                "d3-collection": "../node_modules/d3-collection/build/d3-collection",
-                "d3-dispatch": "../node_modules/d3-dispatch/build/d3-dispatch",
-                "d3-dsv": "../node_modules/d3-dsv/build/d3-dsv",
-                "mocha": "../node_modules/mocha/mocha",
-                "chai": "../node_modules/chai/chai"
-            }
-        });
-        var testMode = "DEV";
+        mocha.setup('bdd');
     </script>
-    <!-- DEV
-    <script src="../node_modules/requirejs/require.js"></script>
-    <script>
-        requirejs.config({
-            baseUrl: '.',
-            paths: {
-                "bluebird": "../node_modules/bluebird/js/browser/bluebird",
-                "es6-promise": "../node_modules/es6-promise/dist/es6-promise",
-                "d3-request": "../node_modules/d3-request/build/d3-request",
-                "d3-collection": "../node_modules/d3-collection/build/d3-collection",
-                "d3-dispatch": "../node_modules/d3-dispatch/build/d3-dispatch",
-                "d3-dsv": "../node_modules/d3-dsv/build/d3-dsv",
-                "tslib": "..//node_modules/tslib/tslib",
-                "mocha": "../node_modules/mocha/mocha",
-                "chai": "../node_modules/chai/chai"
-            }
-        });
-        var testMode = "DEV";
-    </script>
--->
-    <!-- BUNDLE
-    <script src="https://rawgit.com/jrburke/requirejs/2.2.0/require.js"></script>
-    <script>
-        var testMode = "BUNDLE";
-    </script>
--->
-    <!-- IIFE
-    <script src="../dist/hpcc-platform-comms.js"></script>
-    <script>
-        var testMode = "IIFE";
-    </script>
-    -->
-
 </head>
 
 <body>
     <div id="mocha"></div>
+    <script src="../dist/hpcc-platform-comms.js"></script>
     <script>
-        const serverIP = "192.168.3.22";
-        const espUrl = "http://" + serverIP + ":8010/WsWorkunits";
-        switch (testMode) {
-            case "DEV":
-                require(["mocha", "chai", "../dist/hpcc-platform-comms"], function (x, y, HPCCPlatformComms) {
-                    mocha.setup('bdd');
-                    //HPCCPlatformComms.Workunit.unitTest();
-                    require(["../dist-test/src/ECL/Workunit"], function (Workunit) {
-                        Workunit.unitTest();
-                        mocha.run();
-                    });
-                });
-                break;
-            case "BUNDLE":
-                require(["../dist-bundle/hpcc-platform-comms"], doTest);
-                break;
-            case "IIFE":
-                doTest(HPCCPlatformComms);
-                break;
-        }
-
-        function doTest(hpccComms) {
-            switch (testMode) {
-                case "DEV":
-                case "BUNDLE":
-                    require(["../dist-dev/test/ESPConnection"], function () {
-                    });
-                    break;
-                case "IIFE":
-                    var espConnection = new hpccComms.ESPConnection("http://192.168.3.22:8010/WsWorkunits");
-                    return espConnection.post("WUQuery", { PageSize: 2 }).then(function (response) {
-                        console.log(response);
-                    });
-                    break;
-            }
-        }
+        mocha.run();
     </script>
+    <!-- AMD
+    <script src="../node_modules/requirejs/require.js"></script>
+    <script>
+        require(["../dist/hpcc-platform-comms"], function (HPCCPlatformComms) {
+            mocha.run();
+        });
+    </script>
+    -->
+    <!-- IIFE
+    <script src="../dist/hpcc-platform-comms.js"></script>
+    <script>
+        mocha.run();
+    </script>
+    -->
 </body>
 
 </html>

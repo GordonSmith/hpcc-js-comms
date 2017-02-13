@@ -3,7 +3,7 @@ const webpack = require('webpack');
 const nodeExternals = require('webpack-node-externals');
 
 const config = {
-    entry: "./src/index.ts",
+    entry: ["./src/index.ts"],
     devtool: "source-map",
     output: {
         path: path.resolve(__dirname, 'dist'),
@@ -12,6 +12,9 @@ const config = {
         libraryTarget: "umd"
     },
     resolve: {
+        alias: {
+            "request$": "xhr"
+        },
         extensions: [
             ".ts", ".js"
         ]
@@ -35,6 +38,8 @@ switch (process.env.NODE_ENV) {
         config.watch = true;
         config.watchOptions = {
         };
+        //  Uncomment for unittesting in webbrowser
+        //config.entry.push("./test/index.ts");
         break;
     case "min":
         config.output.filename = 'hpcc-platform-comms.min.js';

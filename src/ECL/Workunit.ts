@@ -13,7 +13,7 @@ import { Timer } from "./Timer";
 
 export const WUStateID = WsWorkunits.WUStateID;
 
-export class WorkunitCache extends Cache<{ Wuid: string }, Workunit>{
+export class WorkunitCache extends Cache<{ Wuid: string }, Workunit> {
     constructor() {
         super((obj) => {
             return obj.Wuid;
@@ -463,90 +463,4 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
             });
         });
     }
-}
-
-/*
-let gID: number = 0;
-export class WorkunitMonitor {
-    private wu: Workunit;
-    private id: string;
-    private monitorID: string;
- 
-    constructor(wu: Workunit, monitorID: string, callback: Function) {
-        this.id = "WorkunitMonitor_" + ++gID;
-        this.monitorID = monitorID;
-        this.wu = wu;
-        this.wu.on(`${monitorID}.${this.id}`, callback);
-    }
- 
-    dispose() {
-        this.wu.on(`${this.monitorID}.${this.id}`, null);
-    }
-}
-*/
-
-//  Unit Tests ---
-declare function expect(...args): any;
-export function unitTest() {
-    const VM_HOST: string = "http://192.168.3.22:8010";
-    // const VM_URL: string = "http://192.168.3.22:8010/WsWorkunits";
-    // const PUBLIC_URL: string = "http://52.51.90.23:8010/WsWorkunits";
-    describe("Workunit", function () {
-        describe.only("simple life cycle", function () {
-            let wu1: Workunit;
-            it("creation", function () {
-                return Workunit.create(VM_HOST).then((wu) => {
-                    expect(wu).is.not.undefined;
-                    expect(wu.Wuid).is.not.undefined;
-                    wu1 = wu;
-                    return wu;
-                });
-            });
-            it("update", function () {
-                return wu1.update({ QueryText: "'Hello and Welcome!';" });
-            });
-            it("submit", function () {
-                return wu1.submit("hthor");
-            });
-            it("complete", function () {
-                return new Promise((resolve) => {
-                    if (wu1.isComplete()) {
-                        resolve();
-                    } else {
-                        wu1.on("completed", () => {
-                            resolve();
-                        });
-                    }
-                });
-            });
-            it("results", function () {
-                return wu1.fetchResults().then((results) => {
-                    expect(results.length).equals(1);
-                    return wu1.Results[0].fetchXMLSchema().then((result) => {
-                        // console.log(JSON.stringify(results));
-                        return wu1;
-                    });
-                    // console.log(JSON.stringify(results));
-                });
-            });
-        });
-        describe("XSD Parsing", function () {
-            it("basic", function () {
-                const wu = Workunit.attach(VM_HOST, "W20170208-123106");
-                let result;
-                return wu.fetchResults().then(() => {
-                    result = wu.Results[2];
-                    return result.fetchXMLSchema().then((response) => {
-                        // console.log(JSON.stringify(results));
-                        return wu;
-                    }).then(() => {
-                        return result.fetchResult().then((response) => {
-                            // console.log(JSON.stringify(results));
-                            return wu;
-                        });
-                    });
-                });
-            });
-        });
-    });
 }

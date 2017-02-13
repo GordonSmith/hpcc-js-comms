@@ -1,30 +1,17 @@
-import { unitTest as utStateObject } from "../src/ECL/ESPStateObject";
-import { unitTest as utWorkunit } from "../src/ECL/Workunit";
-import { unitTest as utEventTarget } from "../src/util/EventTarget";
-import { unitTest as utLogging } from "../src/util/Logging";
-import { unitTest as utSAXParser } from "../src/util/SAXPArser";
+import "./connections/Connection";
+import "./connections/ESPConnection";
+import "./connections/WsDFU";
+import "./connections/WsTopology";
+import "./connections/WsWorkunits";
 
-import { expect } from "chai";
-(global || window)["expect"] = expect;
+import "./ECL/ESPStateObject";
+import "./ECL/Graph";
+import "./ECL/Resource";
+import "./ECL/Result";
+import "./ECL/SourceFile";
+import "./ECL/Workunit";
+import "./ECL/WorkunitServer";
 
-utStateObject();
-utSAXParser();
-utEventTarget();
-utLogging();
-if (!process.env.TRAVIS) {
-    utWorkunit();
-}
-
-/*
-describe("EventTarget", function () {
-    it("unitTest", function () {
-        return utEventTarget();
-    });
-});
-
-describe("Logging", function () {
-    it("unitTest", function () {
-        return utLogging();
-    });
-});
-*/
+import "./util/EventTarget";
+import "./util/Logging";
+import "./util/SAXParser";

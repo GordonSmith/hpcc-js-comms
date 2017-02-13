@@ -1,6 +1,3 @@
-
-import { parser } from "sax";
-
 export class Element {
     name: string = "";
     attributes: any = {};
@@ -40,35 +37,44 @@ export class Stack<T> {
 }
 
 export class SAXStackParser {
-    parser: any;
     stack: Stack<Element> = new Stack<Element>();
 
     constructor() {
-        this.parser = parser(true);
+    }
 
-        const context = this;
-        this.parser.onstart = function (text) {
-            context.startDocument();
-        };
-        this.parser.onend = function (text) {
-            context.endDocument();
-        };
-        this.parser.onopentagstart = function (node) {
-            context.startElement(node);
-        };
-        this.parser.onclosetag = function (node) {
-            context.endElement(node);
-        };
-        this.parser.onattribute = function (attr) {
-            context.attributes(attr.name, attr.value);
-        };
-        this.parser.ontext = function (text) {
-            context.characters(text);
-        };
+    private walkDoc(node: Node) {
+        this.startElement({
+            name: node.nodeName
+        });
+        if (node.attributes) {
+            for (let i = 0; i < node.attributes.length; ++i) {
+                const attribute = node.attributes.item(i);
+                this.attributes(attribute.nodeName, attribute.nodeValue);
+            }
+        }
+        for (let i = 0; i < node.childNodes.length; ++i) {
+            const childNode = node.childNodes.item(i);
+            switch (childNode.nodeType) {
+                case childNode.ELEMENT_NODE:
+                    this.walkDoc(childNode);
+                    break;
+                case childNode.TEXT_NODE:
+                    this.characters(childNode.textContent);
+                    break;
+                default:
+            }
+        }
+        this.endElement({
+            name: node.nodeName
+        });
     }
 
     parse(xml: string) {
-        this.parser.write(xml).close();
+        const domParser = new DOMParser();
+        const doc = domParser.parseFromString(xml, "application/xml");
+        this.startDocument();
+        this.walkDoc(doc);
+        this.endDocument();
     }
 
     //  Callbacks  ---
@@ -265,14 +271,4 @@ export function parseXSD(xml): XSDSchema {
     const saxParser = new XSDParser();
     saxParser.parse(xml);
     return saxParser.schema;
-}
-
-declare function expect(...args): any;
-export function unitTest() {
-    describe("SAXParser", function () {
-        it("basic", function () {
-            const x = parseXSD("<xml>Hello, <who name='world'>world</who>!</xml>");
-            expect(x).exists;
-        });
-    });
 }
