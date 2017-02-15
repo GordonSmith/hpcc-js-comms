@@ -4,7 +4,12 @@ export interface IChangedProperty {
     newValue: any;
 }
 
-export class EventListenerHandle<T extends string> {
+export interface IEventListenerHandle {
+    release();
+    unwatch();
+}
+
+export class EventListenerHandle<T extends string> implements IEventListenerHandle {
     private eventTarget: EventTarget<T>;
     private eventID: T;
     private callback: Function;
@@ -20,7 +25,7 @@ export class EventListenerHandle<T extends string> {
     }
 
     unwatch() {
-        throw new Error("Deprecated use release");
+        this.release();
     }
 }
 
@@ -30,7 +35,7 @@ export class EventTarget<T extends string> {
     constructor(...args: T[]) {
     }
 
-    addEventListener(eventID: T, callback: Function): EventListenerHandle<T> {
+    addEventListener(eventID: T, callback: Function): IEventListenerHandle {
         let eventObservers = this._eventObservers[eventID];
         if (!eventObservers) {
             eventObservers = [];

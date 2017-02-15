@@ -10,6 +10,7 @@
   "main": "dist/hpcc-platform-comms.js",
   "module": "dist/src/index",
   "jsnext:main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "scripts": {
     "tsc-es2015": "tsc -p .",
     "tsc-test": "tsc -p ./test",

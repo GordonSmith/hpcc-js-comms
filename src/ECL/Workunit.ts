@@ -2,10 +2,11 @@ import { Promise } from "es6-promise";
 import { ESPExceptions } from "../connections/ESPConnection";
 import { WsTopology } from "../connections/WsTopology";
 import * as WsWorkunits from "../connections/WsWorkunits";
-import { IChangedProperty } from "../util/EventTarget";
+import { IChangedProperty, IEventListenerHandle } from "../util/EventTarget";
 import { logger } from "../util/Logging";
-import { Cache, ESPStateEvents, ESPStateObject } from "./ESPStateObject";
-import { Graph, GraphCache } from "./Graph";
+import { PrimativeValueMap, XMLNode } from "../util/SAXParser";
+import { Cache, ESPStateCallback, ESPStateEvents, ESPStateObject, ESPStatePropCallback } from "./ESPStateObject";
+import { createXGMMLGraph, Graph, GraphCache, IECLDefintion, XGMMLGraph } from "./Graph";
 import { Resource } from "./Resource";
 import { Result, ResultCache } from "./Result";
 import { SourceFile } from "./SourceFile";
@@ -22,19 +23,31 @@ export class WorkunitCache extends Cache<{ Wuid: string }, Workunit> {
 }
 const _workunits = new WorkunitCache();
 
-interface XXX {
+export interface DebugState {
+    sequence: number;
+    state: string;
+    [key: string]: any;
+}
+
+export interface IWorkunit {
     ResultViews: any[];
     HelpersCount: number;
 }
 
-type WorkunitEvents = "completed" | ESPStateEvents;
-type UWorkunitState = WsWorkunits.ECLWorkunit & WsWorkunits.Workunit & XXX;
-type IWorkunitState = WsWorkunits.ECLWorkunit | WsWorkunits.Workunit | XXX;
+export interface IDebugWorkunit {
+    DebugState?: DebugState;
+}
+
+export type WorkunitEvents = "completed" | ESPStateEvents;
+export type UWorkunitState = WsWorkunits.ECLWorkunit & WsWorkunits.Workunit & IWorkunit & IDebugWorkunit;
+export type IWorkunitState = WsWorkunits.ECLWorkunit | WsWorkunits.Workunit | IWorkunit | IDebugWorkunit;
 export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> implements WsWorkunits.Workunit {
     href: string;
     connection: WsWorkunits.Connection;
     topologyConnection: WsTopology;
 
+    private _debugMode: boolean = false;
+    private _debugAllGraph: any;
     private _submitAction: WsWorkunits.WUAction;
     private _monitorHandle: any;
     private _monitorTickCount: number = 0;
@@ -136,6 +149,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     get DebugValueCount(): number { return this.get("DebugValueCount", 0); }
     get WorkflowCount(): number { return this.get("WorkflowCount", 0); }
     get Archived(): boolean { return this.get("Archived"); }
+    get DebugState(): DebugState { return this.get("DebugState", {} as DebugState); }
 
     //  Factories  ---
     static create(href: string): Promise<Workunit> {
@@ -206,12 +220,18 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
             });
         }
 
+        this._debugMode = false;
+        if (action === WsWorkunits.WUAction.Debug) {
+            action = WsWorkunits.WUAction.Run;
+            this._debugMode = true;
+        }
+
         return clusterPromise.then((cluster) => {
             return this.connection.WUUpdate({
                 Wuid: this.Wuid,
                 Action: action,
                 ResultLimit: resultLimit
-            }).then((response) => {
+            }, {}, { Debug: this._debugMode }).then((response) => {
                 this.set(response.Workunit);
                 this._submitAction = action;
                 return this.connection.WUSubmit({ Wuid: this.Wuid, Cluster: cluster }).then(() => {
@@ -246,6 +266,30 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     isDeleted() {
         switch (this.StateID) {
             case WUStateID.NotFound:
+                return true;
+            default:
+        }
+        return false;
+    }
+
+    isDebugging() {
+        switch (this.StateID) {
+            case WUStateID.DebugPaused:
+            case WUStateID.DebugRunning:
+                return true;
+            default:
+        }
+        return false;
+    }
+
+    isRunning(): boolean {
+        switch (this.StateID) {
+            case WUStateID.Compiled:
+            case WUStateID.Running:
+            case WUStateID.Aborting:
+            case WUStateID.Blocked:
+            case WUStateID.DebugPaused:
+            case WUStateID.DebugRunning:
                 return true;
             default:
         }
@@ -289,8 +333,12 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     }
 
     refresh(full: boolean = false): Promise<Workunit> {
-        const retVal: Promise<WsWorkunits.WUInfoResponse | WsWorkunits.WUQueryResponse> = full ? this.WUInfo() : this.WUQuery();
-        return retVal.then((response) => {
+        const refreshPromise: Promise<WsWorkunits.WUInfoResponse | WsWorkunits.WUQueryResponse> = full ? this.WUInfo() : this.WUQuery();
+        const debugPromise = this.debugStatus();
+        return Promise.all([
+            refreshPromise,
+            debugPromise
+        ]).then((responses) => {
             return this;
         });
     }
@@ -309,7 +357,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
         }
 
         this._monitorHandle = setTimeout(() => {
-            const refreshPromise: Promise<any> = this.hasEventListener() ? this.WUInfo() : Promise.resolve(null);
+            const refreshPromise: Promise<any> = this.hasEventListener() ? this.refresh(true) : Promise.resolve(null);
             refreshPromise.then(() => {
                 this._monitor();
             });
@@ -334,9 +382,8 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     }
 
     //  Events  ---
-    on(eventID: WorkunitEvents, propID: Function | keyof UWorkunitState, callback?: Function) {
-        if (this.isCallback(propID)) {
-            callback = propID;
+    on(eventID: WorkunitEvents, propIDorCallback: ESPStateCallback | keyof UWorkunitState, callback?: ESPStatePropCallback): Workunit {
+        if (this.isCallback(propIDorCallback)) {
             switch (eventID) {
                 case "completed":
                     super.on("propChanged", "StateID", (changeInfo: IChangedProperty) => {
@@ -346,14 +393,14 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
                     });
                     break;
                 case "changed":
-                    super.on(eventID, callback);
+                    super.on(eventID, propIDorCallback);
                     break;
                 default:
             }
         } else {
             switch (eventID) {
                 case "changed":
-                    super.on(eventID, propID, callback);
+                    super.on(eventID, propIDorCallback, callback);
                     break;
                 default:
             }
@@ -362,11 +409,35 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
         return this;
     }
 
-    watch(callback: Function) {
-        return super.on("changed", (changes: IChangedProperty[]) => {
-            changes.forEach((changeInfo) => {
-                callback(changeInfo.id, changeInfo.oldValue, changeInfo.newValue);
-            });
+    watch(callback: ESPStateCallback, triggerChange: boolean = false): IEventListenerHandle {
+        if (typeof callback !== "function") {
+            throw new Error("Invalid Callback");
+        }
+        if (triggerChange) {
+            setTimeout(() => {
+                const props: any = this.properties;
+                const changes: IChangedProperty[] = [];
+                for (const key in props) {
+                    if (props.hasOwnProperty(props)) {
+                        changes.push({ id: key, newValue: props[key], oldValue: undefined });
+                    }
+                }
+                callback(changes);
+            }, 0);
+        }
+        const retVal = super.on("changed", callback);
+        this._monitor();
+        return retVal;
+    }
+
+    watchUntilRunning(): Promise<this> {
+        return new Promise((resolve, reject) => {
+            const watchHandle = this.watch(() => {
+                if (this.isComplete() || this.isRunning()) {
+                    watchHandle.release();
+                    resolve(this);
+                }
+            }, true);
         });
     }
 
@@ -460,6 +531,126 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
             return this.refresh().then(() => {
                 this._monitor();
                 return response;
+            });
+        });
+    }
+
+    protected WUCDebug(command: string, opts: Object = {}): Promise<XMLNode> {
+        let optsStr = "";
+        for (const key in opts) {
+            if (opts.hasOwnProperty(key)) {
+                optsStr += ` ${key}='${opts[key]}'`;
+            }
+        }
+        return this.connection.WUCDebug({
+            Wuid: this.Wuid,
+            Command: `<debug:${command} uid='${this.Wuid}'${optsStr}/>`
+        }).then((response) => {
+            return response;
+        });
+    }
+
+    debug(command: string, opts?: Object): Promise<XMLNode> {
+        if (!this.isDebugging()) {
+            return Promise.resolve(null);
+        }
+        return this.WUCDebug(command, opts).then((response: XMLNode) => {
+            return response;
+        }).catch((e) => {
+            console.log(e);
+            return Promise.resolve(null);
+        });
+    }
+
+    debugStatus(): Promise<XMLNode> {
+        if (!this.isDebugging()) {
+            return Promise.resolve<any>({ state: "unknown" });
+        }
+        return this.debug("status").then((response) => {
+            response = response || new XMLNode("null");
+            const debugState = { ...this.DebugState, ...response.attributes };
+            this.set({ DebugState: debugState });
+            return response;
+        });
+    }
+
+    debugContinue(mode = ""): Promise<XMLNode> {
+        return this.debug("continue", {
+            mode
+        });
+    }
+
+    debugStep(mode): Promise<XMLNode> {
+        return this.debug("step", {
+            mode
+        });
+    }
+
+    debugPause(): Promise<XMLNode> {
+        return this.debug("interrupt");
+    }
+
+    debugQuit(): Promise<XMLNode> {
+        return this.debug("quit");
+    }
+
+    debugDeleteAllBreakpoints(): Promise<XMLNode> {
+        return this.debug("delete", {
+            idx: 0
+        });
+    }
+
+    protected debugBreakpointResponseParser(rootNode) {
+        return rootNode.children.map((childNode) => {
+            if (childNode.name === "break") {
+                return childNode.attributes;
+            }
+        });
+    }
+
+    debugBreakpointAdd(id, mode, action): Promise<XMLNode> {
+        return this.debug("breakpoint", {
+            id,
+            mode,
+            action
+        }).then((rootNode) => this.debugBreakpointResponseParser(rootNode));
+    }
+
+    debugBreakpointList(): Promise<any[]> {
+        return this.debug("list").then((rootNode) => {
+            return this.debugBreakpointResponseParser(rootNode);
+        });
+    }
+
+    debugGraph(): Promise<XGMMLGraph> {
+        if (this._debugAllGraph && this.DebugState["_prevGraphSequenceNum"] === this.DebugState["graphSequenceNum"]) {
+            return Promise.resolve(this._debugAllGraph);
+        }
+        return this.debug("graph", { name: "all" }).then((response) => {
+            this.DebugState["_prevGraphSequenceNum"] = this.DebugState["graphSequenceNum"];
+            this._debugAllGraph = createXGMMLGraph(this.Wuid, response);
+            return this._debugAllGraph;
+        });
+    }
+
+    debugBreakpointValid(path): Promise<IECLDefintion[]> {
+        return this.debugGraph().then((graph) => {
+            return graph.breakpointLocations(path);
+        });
+    }
+
+    debugPrint(edgeID: string, startRow: number = 0, numRows: number = 10): Promise<PrimativeValueMap[]> {
+        return this.debug("print", {
+            edgeID,
+            startRow,
+            numRows
+        }).then((response: XMLNode) => {
+            return response.children.map((rowNode) => {
+                const retVal: PrimativeValueMap = {};
+                rowNode.children.forEach((cellNode) => {
+                    retVal[cellNode.name] = cellNode.content;
+                });
+                return retVal;
             });
         });
     }

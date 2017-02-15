@@ -7,9 +7,10 @@
         "module": "es6",
         "sourceMap": true,
         "importHelpers": true,
+        "declaration": false,
         "lib": [
-            "dom",
-            "es5"
+            "es5",
+            "dom"
         ]
     },
     "include": [

@@ -2,6 +2,8 @@ import * as sum from "hash-sum";
 import { exists, inner } from "../connections/ESPConnection";
 import { EventTarget, IChangedProperty } from "../util/EventTarget";
 
+export type ESPStatePropCallback = (changes: IChangedProperty) => void;
+export type ESPStateCallback = (changes: IChangedProperty[]) => void;
 export type ESPStateEvents = "propChanged" | "changed";
 export class ESPStateObject<U, I> {
     private _espState: U = <U>{};
@@ -77,9 +79,9 @@ export class ESPStateObject<U, I> {
         return this._espState[key] !== void 0;
     }
 
-    on(eventID: ESPStateEvents, callback: Function);
-    on(eventID: ESPStateEvents, propID: keyof U, callback: Function);
-    on(eventID: ESPStateEvents, propIDOrCallback: Function | keyof U, callback?: Function) {
+    on(eventID: ESPStateEvents, callback: ESPStateCallback);
+    on(eventID: ESPStateEvents, propID: keyof U, callback: ESPStatePropCallback);
+    on(eventID: ESPStateEvents, propIDOrCallback: ESPStateCallback | keyof U, callback?: ESPStatePropCallback) {
         if (this.isCallback(propIDOrCallback)) {
             switch (eventID) {
                 case "changed":
@@ -100,7 +102,7 @@ export class ESPStateObject<U, I> {
         return this;
     }
 
-    protected isCallback(propIDOrCallback: Function | keyof U): propIDOrCallback is Function {
+    protected isCallback(propIDOrCallback: ESPStateCallback | keyof U): propIDOrCallback is ESPStateCallback {
         return (typeof propIDOrCallback === "function");
     }
 

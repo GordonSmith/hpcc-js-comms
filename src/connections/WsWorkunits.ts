@@ -1,5 +1,6 @@
 import { Promise } from "es6-promise";
 import { ESPConnection, ResponseType } from "./ESPConnection";
+import { xml2json, XMLNode } from "../util/SAXParser";
 
 export enum WUStateID {
     Unknown = 0,
@@ -698,6 +699,7 @@ export interface WUCDebugRequest {
 }
 
 export interface WUCDebugResponse {
+    Result: string;
 }
 
 export class Connection extends ESPConnection {
@@ -735,7 +737,19 @@ export class Connection extends ESPConnection {
         return this.send("WUCreate");
     }
 
-    WUUpdate(request: WUUpdateRequest): Promise<WUUpdateResponse> {
+    private objToESPArray(id: string, obj: any, request: any) {
+        let count = 0;
+        for (let key in obj) {
+            request[`${id}s.${id}.${count}.Name`] = key;
+            request[`${id}s.${id}.${count}.Value`] = obj[key];
+            ++count;
+        }
+        request[`${id}s.${id}.itemcount`] = count;
+    }
+
+    WUUpdate(request: WUUpdateRequest, appValues: { [key: string]: string | number | boolean } = {}, debugValues: { [key: string]: string | number | boolean } = {}): Promise<WUUpdateResponse> {
+        this.objToESPArray('ApplicationValue', appValues, request);
+        this.objToESPArray('DebugValue', debugValues, request);
         return this.send("WUUpdate", request);
     }
 
@@ -805,7 +819,13 @@ export class Connection extends ESPConnection {
         return this.send("WUGetStats", request);
     }
 
-    WUCDebug(request: WUCDebugRequest): Promise<WUCDebugResponse> {
-        return this.send("WUCDebug", request);
+    WUCDebug(request: WUCDebugRequest): Promise<XMLNode> {
+        return this.send("WUCDebug", request).then((response) => {
+            const retVal = xml2json(response.Result);
+            if (retVal.children.length && retVal.children[0].children.length) {
+                return retVal.children[0].children[0];
+            }
+            return null;
+        });
     }
 }

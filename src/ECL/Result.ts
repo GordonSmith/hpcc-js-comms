@@ -1,8 +1,7 @@
 import { Promise } from "es6-promise";
-import * as sum from "hash-sum";
 import { exists } from "../connections/ESPConnection";
 import { DFULogicalFile } from "../connections/WsDFU";
-import { ECLResult, ECLSchemas, WUResultRequest } from "../connections/WsWorkunits";
+import { ECLResult, ECLSchemas, WUResultRequest, WUResultResponse } from "../connections/WsWorkunits";
 import { Connection } from "../connections/WsWorkunits";
 import { parseXSD, XSDSchema } from "../util/SAXParser";
 import { Cache, ESPStateObject } from "./ESPStateObject";
@@ -65,7 +64,7 @@ export class Result extends ESPStateObject<ECLResultEx & DFULogicalFile, ECLResu
         });
     }
 
-    protected WUResult(start: number = 0, count: number = 1, suppressXmlSchema: boolean = false) {
+    protected WUResult(start: number = 0, count: number = 1, suppressXmlSchema: boolean = false): Promise<WUResultResponse> {
         const request: WUResultRequest = <WUResultRequest>{};
         if (this.Wuid && this.Sequence !== undefined) {
             request.Wuid = this.Wuid;
@@ -85,7 +84,7 @@ export class Result extends ESPStateObject<ECLResultEx & DFULogicalFile, ECLResu
     }
 }
 
-export class ResultCache extends Cache<ECLResult, Result>{
+export class ResultCache extends Cache<ECLResult, Result> {
     constructor() {
         super((obj) => {
             return Cache.hash([obj.Sequence, obj.Name, obj.FileName]);

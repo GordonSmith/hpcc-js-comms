@@ -1,7 +1,13 @@
-export class Element {
+import { DOMParser } from "xmldom";
+
+export type PrimativeValue = string;
+export type PrimativeValueMap = { [key: string]: PrimativeValue };
+export class XMLNode {
     name: string = "";
-    attributes: any = {};
+    attributes: PrimativeValueMap = {};
+    children: XMLNode[] = [];
     content: string = "";
+
     constructor(node) {
         this.name = node.name;
     }
@@ -12,6 +18,10 @@ export class Element {
 
     appendContent(content: string) {
         this.content += content;
+    }
+
+    appendChild(child: XMLNode) {
+        this.children.push(child);
     }
 }
 
@@ -37,13 +47,14 @@ export class Stack<T> {
 }
 
 export class SAXStackParser {
-    stack: Stack<Element> = new Stack<Element>();
+    root: XMLNode;
+    stack: Stack<XMLNode> = new Stack<XMLNode>();
 
     constructor() {
     }
 
     private walkDoc(node: Node) {
-        this.startElement({
+        this.startXMLNode({
             name: node.nodeName
         });
         if (node.attributes) {
@@ -64,7 +75,7 @@ export class SAXStackParser {
                 default:
             }
         }
-        this.endElement({
+        this.endXMLNode({
             name: node.nodeName
         });
     }
@@ -84,11 +95,17 @@ export class SAXStackParser {
     endDocument() {
     }
 
-    startElement(node): Element {
-        return this.stack.push(new Element(node));
+    startXMLNode(node): XMLNode {
+        const newNode = new XMLNode(node);
+        if (!this.stack.depth()) {
+            this.root = newNode;
+        } else {
+            this.stack.top().appendChild(newNode);
+        }
+        return this.stack.push(newNode);
     }
 
-    endElement(node): Element {
+    endXMLNode(node): XMLNode {
         return this.stack.pop();
     }
 
@@ -101,10 +118,16 @@ export class SAXStackParser {
     }
 }
 
-export class XSDNode {
-    protected e?: Element;
+export function xml2json(xml): XMLNode {
+    const saxParser = new SAXStackParser();
+    saxParser.parse(xml);
+    return saxParser.root;
+}
 
-    constructor(e: Element) {
+export class XSDNode {
+    protected e?: XMLNode;
+
+    constructor(e: XMLNode) {
         this.e = e;
     }
     fix() {
@@ -112,22 +135,22 @@ export class XSDNode {
     }
 }
 
-export class XSDElement extends XSDNode {
+export class XSDXMLNode extends XSDNode {
     name: string;
     type: string;
-    private children: XSDElement[] = [];
+    private children: XSDXMLNode[] = [];
 
-    constructor(e: Element) {
+    constructor(e: XMLNode) {
         super(e);
     }
 
-    append(child: XSDElement) {
+    append(child: XSDXMLNode) {
         this.children.push(child);
     }
 
     fix() {
-        this.name = this.e.attributes.name;
-        this.type = this.e.attributes.type;
+        this.name = this.e.attributes["name"];
+        this.type = this.e.attributes["type"];
         for (let i = this.children.length - 1; i >= 0; --i) {
             const row = this.children[i];
             if (row.name === "Row" && row.type === undefined) {
@@ -144,14 +167,14 @@ export class XSDSimpleType extends XSDNode {
     type: string;
     maxLength: number;
 
-    protected _restricition?: Element;
-    protected _maxLength?: Element;
+    protected _restricition?: XMLNode;
+    protected _maxLength?: XMLNode;
 
-    constructor(e: Element) {
+    constructor(e: XMLNode) {
         super(e);
     }
 
-    append(e: Element) {
+    append(e: XMLNode) {
         switch (e.name) {
             case "xs:restriction":
                 this._restricition = e;
@@ -164,9 +187,9 @@ export class XSDSimpleType extends XSDNode {
     }
 
     fix() {
-        this.name = this.e.attributes.name;
-        this.type = this._restricition.attributes.base;
-        this.maxLength = this._maxLength.attributes.value;
+        this.name = this.e.attributes["name"];
+        this.type = this._restricition.attributes["base"];
+        this.maxLength = +this._maxLength.attributes["value"];
         delete this._restricition;
         delete this._maxLength;
         super.fix();
@@ -174,7 +197,7 @@ export class XSDSimpleType extends XSDNode {
 }
 
 export class XSDSchema {
-    root: XSDElement;
+    root: XSDXMLNode;
     simpleTypes: { [name: string]: XSDSimpleType } = {};
 
     calcWidth(type, name) {
@@ -225,19 +248,19 @@ class XSDParser extends SAXStackParser {
     simpleType: XSDSimpleType;
     simpleTypes: { [name: string]: XSDSimpleType } = {};
 
-    xsdStack: Stack<XSDElement> = new Stack<XSDElement>();
+    xsdStack: Stack<XSDXMLNode> = new Stack<XSDXMLNode>();
 
-    startElement(node): Element {
-        const e = super.startElement(node);
+    startXMLNode(node): XMLNode {
+        const e = super.startXMLNode(node);
         switch (e.name) {
-            case "xs:element":
-                const xsdElement = new XSDElement(e);
+            case "xs:XMLNode":
+                const xsdXMLNode = new XSDXMLNode(e);
                 if (!this.schema.root) {
-                    this.schema.root = xsdElement;
+                    this.schema.root = xsdXMLNode;
                 } else if (this.xsdStack.depth()) {
-                    this.xsdStack.top().append(xsdElement);
+                    this.xsdStack.top().append(xsdXMLNode);
                 }
-                this.xsdStack.push(xsdElement);
+                this.xsdStack.push(xsdXMLNode);
                 break;
             case "xs:simpleType":
                 this.simpleType = new XSDSimpleType(e);
@@ -246,12 +269,12 @@ class XSDParser extends SAXStackParser {
         }
         return e;
     }
-    endElement(node): Element {
-        const e = super.endElement(node);
+    endXMLNode(node): XMLNode {
+        const e = super.endXMLNode(node);
         switch (e.name) {
-            case "xs:element":
-                const xsdElement = this.xsdStack.pop();
-                xsdElement.fix();
+            case "xs:XMLNode":
+                const xsdXMLNode = this.xsdStack.pop();
+                xsdXMLNode.fix();
                 break;
             case "xs:simpleType":
                 this.simpleType.fix();

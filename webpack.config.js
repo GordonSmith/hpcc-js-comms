@@ -28,6 +28,7 @@ const config = {
         ]
     },
     externals: {
+        "xmldom": "DOMParser"
     },
     plugins: [
     ]

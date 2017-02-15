@@ -57,7 +57,8 @@
             "check-separator",
             "check-type"
         ],
-        "prefer-const": true
+        "prefer-const": true,
+        "no-string-literal": false
     },
     "jsRules": {
         /*

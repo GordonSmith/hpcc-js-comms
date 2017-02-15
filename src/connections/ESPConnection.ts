@@ -92,7 +92,7 @@ export class ESPConnection extends Connection {
     }
 
     protected transmit(verb: VERB, action: string, request: Object, jsonContent: boolean = true): Promise<any> {
-        return super.transmit(verb, this.href + "/" + action + ".json", request, false).then((_response) => {
+        return super.transmit(verb, this.href + "/" + action + ".json", request).then((_response) => {
             if (jsonContent) {
                 let response;
                 try {
@@ -106,7 +106,7 @@ export class ESPConnection extends Connection {
                 if (response.Exceptions) {
                     throw new ESPExceptions(action, request, response.Exceptions);
                 }
-                const retVal = response[`${action}Response`];
+                const retVal = response[`${action === "WUCDebug" ? "WUDebug" : action}Response`];
                 if (!retVal) {
                     throw new ESPExceptions(action, request, {
                         Source: "ESPConnection.transmit",

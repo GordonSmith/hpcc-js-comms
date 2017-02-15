@@ -1,15 +1,38 @@
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558
-    // for the documentation about the tasks.json format
     "version": "0.1.0",
-    "command": "tsc",
-    "isShellCommand": true,
-    "args": [
-        "-w",
-        "-p",
-        "./test"
-    ],
-    "showOutput": "silent",
-    "isBackground": true,
-    "problemMatcher": "$tsc-watch"
+    "tasks": [
+        {
+            "taskName": "test-watch",
+            "command": "tsc",
+            "args": [
+                "-w",
+                "-p",
+                "./test"
+            ],
+            "isShellCommand": true,
+            "isBackground": true,
+            "isBuildCommand": true,
+            "problemMatcher": "$tsc-watch"
+        },
+        {
+            "taskName": "build-src",
+            "command": "tsc",
+            "args": [
+                "-d",
+                "-p",
+                "."
+            ],
+            "isShellCommand": true,
+            "showOutput": "always",
+            "problemMatcher": "$tsc-watch"
+        },
+        {
+            "taskName": "sample",
+            "command": "gulp",
+            "args": [
+                "build"
+            ],
+            "isShellCommand": true
+        }
+    ]
 }

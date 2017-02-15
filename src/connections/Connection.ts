@@ -36,13 +36,12 @@ export class Connection {
         return str.join("&");
     }
 
-    protected transmit(verb: VERB, href: string, _request: Object, jsonContent: boolean = true): Promise<any> {
+    protected transmit(verb: VERB, href: string, _request: Object): Promise<any> {
         this.eventTarget.dispatchEvent("progress", "preSend");
         return new Promise((resolve, reject) => {
-            const request = jsonContent ? _request : this.serialize(_request);
+            const request = this.serialize(_request);
             xhr({
                 url: href,
-                json: jsonContent,
                 body: request,
                 method: verb,
                 headers: {
@@ -50,7 +49,7 @@ export class Connection {
                     "Content-Type": "application/x-www-form-urlencoded"
                 },
                 rejectUnauthorized: true,
-                useXDR: true,
+                useXDR: false,
                 auth: {
                     user: this.userID,
                     pass: this.userPW,
