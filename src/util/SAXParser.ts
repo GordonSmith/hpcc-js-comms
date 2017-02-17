@@ -63,16 +63,10 @@ export class SAXStackParser {
                 this.attributes(attribute.nodeName, attribute.nodeValue);
             }
         }
-        for (let i = 0; i < node.childNodes.length; ++i) {
-            const childNode = node.childNodes.item(i);
-            switch (childNode.nodeType) {
-                case childNode.ELEMENT_NODE:
-                    this.walkDoc(childNode);
-                    break;
-                case childNode.TEXT_NODE:
-                    this.characters(childNode.textContent);
-                    break;
-                default:
+        if (node.childNodes) {
+            for (let i = 0; i < node.childNodes.length; ++i) {
+                const childNode = node.childNodes.item(i);
+                this.walkDoc(childNode);
             }
         }
         this.endXMLNode({
@@ -253,7 +247,7 @@ class XSDParser extends SAXStackParser {
     startXMLNode(node): XMLNode {
         const e = super.startXMLNode(node);
         switch (e.name) {
-            case "xs:XMLNode":
+            case "xs:element":
                 const xsdXMLNode = new XSDXMLNode(e);
                 if (!this.schema.root) {
                     this.schema.root = xsdXMLNode;
@@ -269,10 +263,11 @@ class XSDParser extends SAXStackParser {
         }
         return e;
     }
+
     endXMLNode(node): XMLNode {
-        const e = super.endXMLNode(node);
+        const e = this.stack.top();
         switch (e.name) {
-            case "xs:XMLNode":
+            case "xs:element":
                 const xsdXMLNode = this.xsdStack.pop();
                 xsdXMLNode.fix();
                 break;
@@ -286,7 +281,7 @@ class XSDParser extends SAXStackParser {
                     this.simpleType.append(e);
                 }
         }
-        return e;
+        return super.endXMLNode(node);
     }
 }
 

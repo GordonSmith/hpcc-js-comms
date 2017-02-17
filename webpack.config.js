@@ -28,7 +28,7 @@ const config = {
         ]
     },
     externals: {
-        "xmldom": "DOMParser"
+        "xmldom": "window"
     },
     plugins: [
     ]

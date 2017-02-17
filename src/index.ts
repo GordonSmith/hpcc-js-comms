@@ -1,3 +1,4 @@
+export { Connection, JSONConnection } from "./connections/Connection";
 export { ESPConnection, espTime2Seconds } from "./connections/ESPConnection";
 export { Connection as WsWorkunits, WUAction } from "./connections/WsWorkunits";
 export { WsTopology } from "./connections/WsTopology";

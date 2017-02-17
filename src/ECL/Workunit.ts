@@ -388,7 +388,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
                 case "completed":
                     super.on("propChanged", "StateID", (changeInfo: IChangedProperty) => {
                         if (this.isComplete()) {
-                            callback(changeInfo);
+                            propIDorCallback([changeInfo]);
                         }
                     });
                     break;
@@ -409,7 +409,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
         return this;
     }
 
-    watch(callback: ESPStateCallback, triggerChange: boolean = false): IEventListenerHandle {
+    watch(callback: ESPStateCallback, triggerChange: boolean = true): IEventListenerHandle {
         if (typeof callback !== "function") {
             throw new Error("Invalid Callback");
         }
@@ -430,14 +430,31 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
         return retVal;
     }
 
-    watchUntilRunning(): Promise<this> {
+    watchUntilComplete(callback?: ESPStateCallback): Promise<this> {
         return new Promise((resolve, reject) => {
-            const watchHandle = this.watch(() => {
+            const watchHandle = this.watch((changes) => {
+                if (callback) {
+                    callback(changes);
+                }
+                if (this.isComplete()) {
+                    watchHandle.release();
+                    resolve(this);
+                }
+            });
+        });
+    }
+
+    watchUntilRunning(callback?: ESPStateCallback): Promise<this> {
+        return new Promise((resolve, reject) => {
+            const watchHandle = this.watch((changes) => {
+                if (callback) {
+                    callback(changes);
+                }
                 if (this.isComplete() || this.isRunning()) {
                     watchHandle.release();
                     resolve(this);
                 }
-            }, true);
+            });
         });
     }
 

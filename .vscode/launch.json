@@ -26,8 +26,7 @@
             ],
             "internalConsoleOptions": "openOnSessionStart",
             "outFiles": [
-                "${workspaceRoot}/dist-test/src/**/*",
-                "${workspaceRoot}/dist-test/test/**/*"
+                "${workspaceRoot}/dist-test/**/*"
             ]
         },
         {

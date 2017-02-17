@@ -6,7 +6,7 @@ const VM_HOST: string = "http://192.168.3.22:8010";
 // const VM_URL: string = "http://192.168.3.22:8010/WsWorkunits";
 // const PUBLIC_URL: string = "http://52.51.90.23:8010/WsWorkunits";
 describe("Workunit", function () {
-    describe.only("simple life cycle", function () {
+    describe("simple life cycle", function () {
         let wu1: Workunit;
         it("creation", function () {
             return Workunit.create(VM_HOST).then((wu) => {
