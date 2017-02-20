@@ -52,7 +52,7 @@ describe("Workunit", function () {
             let result;
             return wu.fetchResults().then((response) => {
                 result = wu.CResults[0];
-                return result.fetchXMLSchema().then((response) => {
+                return result.fetchXMLSchema().then((response2) => {
                     // console.log(JSON.stringify(results));
                     return wu;
                 }).then(() => {

@@ -1,7 +1,7 @@
 import { Promise } from "es6-promise";
 import { exists } from "../connections/ESPConnection";
 import { DFULogicalFile } from "../connections/WsDFU";
-import { ECLResult, ECLSchemas, WUResultRequest, WUResultResponse } from "../connections/WsWorkunits";
+import { ECLResult, ECLSchemas, WUResultRequest, WUResultResponse, Options } from "../connections/WsWorkunits";
 import { Connection } from "../connections/WsWorkunits";
 import { parseXSD, XSDSchema } from "../util/SAXParser";
 import { Cache, ESPStateObject } from "./ESPStateObject";
@@ -28,9 +28,9 @@ export class Result extends ESPStateObject<ECLResultEx & DFULogicalFile, ECLResu
     get NodeGroup(): string { return this.get("NodeGroup"); }
     get ResultViews(): any[] { return this.get("ResultViews"); }
 
-    constructor(href: string, wuid: string, eclResult: ECLResult, resultViews: any[]) {
+    constructor(href: string, wuid: string, eclResult: ECLResult, resultViews: any[], opts: Options) {
         super();
-        this.connection = new Connection(href);
+        this.connection = new Connection(href, opts);
         this.set({
             Wuid: wuid,
             ResultViews: resultViews,

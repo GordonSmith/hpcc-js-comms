@@ -1,6 +1,7 @@
 import { Promise } from "es6-promise";
-import { ESPConnection, ResponseType } from "./ESPConnection";
 import { xml2json, XMLNode } from "../util/SAXParser";
+import { ESPConnection, Options, ResponseType } from "./ESPConnection";
+export { Options } from "./ESPConnection";
 
 export enum WUStateID {
     Unknown = 0,
@@ -703,8 +704,8 @@ export interface WUCDebugResponse {
 }
 
 export class Connection extends ESPConnection {
-    constructor(href: string = "") {
-        super(`${href}/WsWorkunits`);
+    constructor(href: string = "", opts: Options) {
+        super(`${href}/WsWorkunits`, opts);
     }
 
     WUQuery(request: WUQueryRequest = {}): Promise<WUQueryResponse> {
@@ -737,19 +738,21 @@ export class Connection extends ESPConnection {
         return this.send("WUCreate");
     }
 
-    private objToESPArray(id: string, obj: any, request: any) {
+    private objToESPArray(id: string, obj: Object, request: any) {
         let count = 0;
-        for (let key in obj) {
-            request[`${id}s.${id}.${count}.Name`] = key;
-            request[`${id}s.${id}.${count}.Value`] = obj[key];
-            ++count;
+        for (const key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                request[`${id}s.${id}.${count}.Name`] = key;
+                request[`${id}s.${id}.${count}.Value`] = obj[key];
+                ++count;
+            }
         }
         request[`${id}s.${id}.itemcount`] = count;
     }
 
     WUUpdate(request: WUUpdateRequest, appValues: { [key: string]: string | number | boolean } = {}, debugValues: { [key: string]: string | number | boolean } = {}): Promise<WUUpdateResponse> {
-        this.objToESPArray('ApplicationValue', appValues, request);
-        this.objToESPArray('DebugValue', debugValues, request);
+        this.objToESPArray("ApplicationValue", appValues, request);
+        this.objToESPArray("DebugValue", debugValues, request);
         return this.send("WUUpdate", request);
     }
 

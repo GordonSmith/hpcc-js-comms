@@ -1,6 +1,7 @@
 import { Promise } from "es6-promise";
 import { logger } from "../util/Logging";
-import { Connection, ConnectionError, VERB } from "./Connection";
+import { Connection, ConnectionError, VERB, Options } from "./Connection";
+export { Options } from "./Connection";
 
 export function inner(prop: string, obj: any): any {
     if (prop === void 0 || obj === void 0) return void 0;
@@ -86,8 +87,8 @@ export enum ResponseType {
 export class ESPConnection extends Connection {
     private readonly href: string;
 
-    constructor(href: string) {
-        super();
+    constructor(href: string, opts: Options) {
+        super(opts);
         this.href = href;
     }
 

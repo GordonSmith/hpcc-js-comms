@@ -10,15 +10,37 @@ export class ConnectionError extends Error {
     }
 };
 
+export interface Options {
+    userID?: string;
+    userPW?: string;
+    rejectUnauthorized?: boolean;
+}
+
 export type VERB = "GET" | "POST" | "JSONP";
 export class Connection {
     userID: string = "";
     userPW: string = "";
+    rejectUnauthorized: boolean;
     defaultMode: VERB = "POST";
 
     eventTarget = new EventTarget();
 
-    constructor() {
+    constructor(opts: Options) {
+        this.opts(opts);
+    }
+
+    opts(_?: Options): Options | this {
+        if (_ === void 0) {
+            return {
+                userID: this.userID,
+                userPW: this.userPW,
+                rejectUnauthorized: this.rejectUnauthorized
+            };
+        }
+        this.userID = _.userID || "";
+        this.userPW = _.userPW || "";
+        this.rejectUnauthorized = _.rejectUnauthorized || true;
+        return this;
     }
 
     on(_: string, callback: Function) {
@@ -95,7 +117,7 @@ export class Connection {
                         "X-Requested-With": "XMLHttpRequest",
                         "Content-Type": "application/x-www-form-urlencoded"
                     };
-                    options.rejectUnauthorized = true;
+                    options.rejectUnauthorized = this.rejectUnauthorized;
                     options.form = _request;
                     break;
                 default:
@@ -129,8 +151,8 @@ export class Connection {
 
 export class JSONConnection extends Connection {
     href: string;
-    constructor(href: string) {
-        super();
+    constructor(href: string, opts: Options) {
+        super(opts);
         this.href = href;
     }
 

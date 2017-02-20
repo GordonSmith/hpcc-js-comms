@@ -1,4 +1,4 @@
-import { Connection } from "../connections/WsWorkunits";
+import { Connection, Options } from "../connections/WsWorkunits";
 import { ESPStateObject } from "./ESPStateObject";
 
 export interface ResourceEx {
@@ -17,9 +17,9 @@ export class Resource extends ESPStateObject<ResourceEx, ResourceEx> implements 
     get DisplayName(): string { return this.get("DisplayName"); }
     get DisplayPath(): string { return this.get("DisplayPath"); }
 
-    constructor(href: string, wuid: string, url: string) {
+    constructor(href: string, wuid: string, url: string, opts: Options) {
         super();
-        this.connection = new Connection(href);
+        this.connection = new Connection(href, opts);
 
         const cleanedURL = url.split("\\").join("/");
         const urlParts = cleanedURL.split("/");

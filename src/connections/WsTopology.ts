@@ -1,5 +1,5 @@
 import { Promise } from "es6-promise";
-import { ESPConnection } from "./ESPConnection";
+import { ESPConnection, Options } from "./ESPConnection";
 
 export interface EclServerQueueRequest {
     EclServerQueue?: string;
@@ -23,8 +23,8 @@ export interface TpLogicalClusterQueryResponse {
 }
 
 export class WsTopology extends ESPConnection {
-    constructor(href: string = "") {
-        super(`${href}/WsTopology`);
+    constructor(href: string = "", opts: Options) {
+        super(`${href}/WsTopology`, opts);
     }
 
     TpLogicalClusterQuery(request: EclServerQueueRequest = {}): Promise<TpLogicalClusterQueryResponse> {

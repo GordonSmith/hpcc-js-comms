@@ -72,7 +72,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     get CResults(): Result[] {
         return this.Results.ECLResult.map((eclResult) => {
             return this._resultCache.get(eclResult, () => {
-                return new Result(this.href, this.Wuid, eclResult, this.ResultViews);
+                return new Result(this.href, this.Wuid, eclResult, this.ResultViews, this.connection.opts());
             });
         });
     }
@@ -86,7 +86,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     get Timers(): WsWorkunits.Timers { return this.get("Timers", { ECLTimer: [] }); }
     get CTimers(): Timer[] {
         return this.Timers.ECLTimer.map((eclTimer) => {
-            return new Timer(this.href, this.Wuid, eclTimer);
+            return new Timer(this.href, this.Wuid, eclTimer, this.connection.opts());
         });
     }
 
@@ -96,7 +96,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     get CGraphs(): Graph[] {
         return this.Graphs.ECLGraph.map((eclGraph) => {
             return this._graphCache.get(eclGraph, () => {
-                return new Graph(this.href, this.Wuid, eclGraph, this.CTimers);
+                return new Graph(this.href, this.Wuid, eclGraph, this.CTimers, this.connection.opts());
             });
         });
     }
@@ -105,7 +105,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     get ResourceURLs(): WsWorkunits.ResourceURLs { return this.get("ResourceURLs", { URL: [] }); }
     get CResourceURLs(): Resource[] {
         return this.ResourceURLs.URL.map((url) => {
-            return new Resource(this.href, this.Wuid, url);
+            return new Resource(this.href, this.Wuid, url, this.connection.opts());
         });
     }
     get TotalClusterTime(): string { return this.get("TotalClusterTime", ""); }
@@ -134,7 +134,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     get SourceFiles(): WsWorkunits.SourceFiles { return this.get("SourceFiles", { ECLSourceFile: [] }); }
     get CSourceFiles(): SourceFile[] {
         return this.SourceFiles.ECLSourceFile.map((eclSourceFile) => {
-            return new SourceFile(this.href, this.Wuid, eclSourceFile);
+            return new SourceFile(this.href, this.Wuid, eclSourceFile, this.connection.opts());
         });
     }
     get VariableCount(): number { return this.get("VariableCount", 0); }
@@ -152,8 +152,8 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     get DebugState(): DebugState { return this.get("DebugState", {} as DebugState); }
 
     //  Factories  ---
-    static create(href: string): Promise<Workunit> {
-        const retVal = new Workunit(href);
+    static create(href: string, opts: WsWorkunits.Options = {}): Promise<Workunit> {
+        const retVal = new Workunit(href, opts);
         return retVal.connection.WUCreate().then((response) => {
             _workunits.set(retVal);
             retVal.set(response.Workunit);
@@ -161,9 +161,9 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
         });
     }
 
-    static attach(href: string, wuid: string, state?: WsWorkunits.ECLWorkunit | WsWorkunits.Workunit): Workunit {
+    static attach(href: string, wuid: string, state?: WsWorkunits.ECLWorkunit | WsWorkunits.Workunit, opts?: WsWorkunits.Options): Workunit {
         const retVal = _workunits.get({ Wuid: wuid }, () => {
-            return new Workunit(href, wuid);
+            return new Workunit(href, opts, wuid);
         });
         if (state) {
             retVal.set(state);
@@ -176,11 +176,11 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     }
 
     //  ---  ---  ---
-    protected constructor(href: string = "", wuid?: string) {
+    protected constructor(href: string = "", opts: WsWorkunits.Options, wuid: string = "") {
         super();
         this.href = href;
-        this.connection = new WsWorkunits.Connection(href);
-        this.topologyConnection = new WsTopology(href);
+        this.connection = new WsWorkunits.Connection(href, opts);
+        this.topologyConnection = new WsTopology(href, opts);
         this.clearState(wuid);
     }
 
