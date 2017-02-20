@@ -493,7 +493,8 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
         return this.connection.WUInfo({
             ..._request, Wuid: this.Wuid,
             IncludeResults: includeResults,
-            IncludeResultsViewNames: includeResults
+            IncludeResultsViewNames: includeResults,
+            SuppressResultSchemas: false
         }).then((response) => {
             if (response.Workunit.ResourceURLCount) {
                 response.Workunit.ResourceURLCount = response.Workunit.ResourceURLCount - 1;
@@ -572,7 +573,9 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
             return Promise.resolve(null);
         }
         return this.WUCDebug(command, opts).then((response: XMLNode) => {
-            return response;
+            return response.children.filter((xmlNode) => {
+                return xmlNode.name === command;
+            })[0];
         }).catch((e) => {
             console.log(e);
             return Promise.resolve(null);
@@ -581,12 +584,16 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
 
     debugStatus(): Promise<XMLNode> {
         if (!this.isDebugging()) {
-            return Promise.resolve<any>({ state: "unknown" });
+            return Promise.resolve<any>({
+                DebugState: { state: "unknown" }
+            });
         }
         return this.debug("status").then((response) => {
             response = response || new XMLNode("null");
             const debugState = { ...this.DebugState, ...response.attributes };
-            this.set({ DebugState: debugState });
+            this.set({
+                DebugState: debugState
+            });
             return response;
         });
     }

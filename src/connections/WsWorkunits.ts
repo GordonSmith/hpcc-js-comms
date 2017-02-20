@@ -822,8 +822,8 @@ export class Connection extends ESPConnection {
     WUCDebug(request: WUCDebugRequest): Promise<XMLNode> {
         return this.send("WUCDebug", request).then((response) => {
             const retVal = xml2json(response.Result);
-            if (retVal.children.length && retVal.children[0].children.length) {
-                return retVal.children[0].children[0];
+            if (retVal.children.length) {
+                return retVal.children[0];
             }
             return null;
         });

@@ -23,7 +23,6 @@
     "watch": "cross-env NODE_ENV=watch webpack",
     "lint": "tslint ./src/**/*",
     "test": "npm run lint && npm run tsc-test && mocha ./dist-test/test/index.js",
-    "prepublish": "npm run build",
     "doc": "typedoc --out ./docx/ --tsconfig ./tsconfig.json --exclude node_modules --excludeNotExported --ignoreCompilerErrors src"
   },
   "dependencies": {

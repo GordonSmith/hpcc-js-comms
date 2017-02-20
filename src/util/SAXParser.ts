@@ -66,7 +66,11 @@ export class SAXStackParser {
         if (node.childNodes) {
             for (let i = 0; i < node.childNodes.length; ++i) {
                 const childNode = node.childNodes.item(i);
-                this.walkDoc(childNode);
+                if (childNode.nodeType === childNode.TEXT_NODE) {
+                    this.characters(childNode.nodeValue);
+                } else {
+                    this.walkDoc(childNode);
+                }
             }
         }
         this.endXMLNode({

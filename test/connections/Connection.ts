@@ -3,7 +3,7 @@ import { Promise } from "es6-promise";
 import * as xhr from "request";
 import { } from "../../src/connections/Connection";
 
-describe.only("ESPConnection", function () {
+describe("ESPConnection", function () {
     it("GeoDecode", function () {
         return new Promise((resolve, reject) => {
             xhr({
@@ -14,7 +14,6 @@ describe.only("ESPConnection", function () {
                     //"Content-Type": "application/json"
                 }
             }, function (err, resp, body) {
-                debugger;
                 resolve();
                 let d = 0;
                 // check resp.statusCode 

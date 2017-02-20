@@ -42,7 +42,6 @@ export class Connection {
             const respondedTick = 5000;
             const callbackName = "jsonp_callback_" + Math.round(Math.random() * 999999);
             window[callbackName] = function (response) {
-                debugger;
                 respondedTimeout = 0;
                 doCallback();
                 resolve(response);
@@ -97,6 +96,7 @@ export class Connection {
                         "Content-Type": "application/x-www-form-urlencoded"
                     };
                     options.rejectUnauthorized = true;
+                    options.form = _request;
                     break;
                 default:
             }

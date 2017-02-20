@@ -9,7 +9,7 @@ export interface IEventListenerHandle {
     unwatch();
 }
 
-export class EventListenerHandle<T extends string> implements IEventListenerHandle {
+class EventListenerHandle<T extends string> implements IEventListenerHandle {
     private eventTarget: EventTarget<T>;
     private eventID: T;
     private callback: Function;

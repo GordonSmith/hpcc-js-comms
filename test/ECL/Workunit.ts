@@ -6,13 +6,15 @@ const VM_HOST: string = "http://192.168.3.22:8010";
 // const VM_URL: string = "http://192.168.3.22:8010/WsWorkunits";
 // const PUBLIC_URL: string = "http://52.51.90.23:8010/WsWorkunits";
 describe("Workunit", function () {
+    let wuid: string;
     describe("simple life cycle", function () {
         let wu1: Workunit;
         it("creation", function () {
             return Workunit.create(VM_HOST).then((wu) => {
-                expect(wu).is.not.undefined;
-                expect(wu.Wuid).is.not.undefined;
+                expect(wu).exist;
+                expect(wu.Wuid).exist;
                 wu1 = wu;
+                wuid = wu.Wuid;
                 return wu;
             });
         });
@@ -46,10 +48,10 @@ describe("Workunit", function () {
     });
     describe("XSD Parsing", function () {
         it("basic", function () {
-            const wu = Workunit.attach(VM_HOST, "W20170201-212502");
+            const wu = Workunit.attach(VM_HOST, wuid);
             let result;
-            return wu.fetchResults().then(() => {
-                result = wu.CResults[2];
+            return wu.fetchResults().then((response) => {
+                result = wu.CResults[0];
                 return result.fetchXMLSchema().then((response) => {
                     // console.log(JSON.stringify(results));
                     return wu;
