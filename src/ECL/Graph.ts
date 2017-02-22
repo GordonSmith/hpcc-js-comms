@@ -1,4 +1,4 @@
-import { Connection, ECLGraph, Options } from "../connections/WsWorkunits";
+import { ECLGraph, Service } from "../comms/esp/WsWorkunits";
 import { PrimativeValueMap, XMLNode } from "../util/SAXParser";
 import { Cache, ESPStateObject } from "./ESPStateObject";
 import { Timer } from "./Timer";
@@ -8,7 +8,7 @@ export interface ECLGraphEx extends ECLGraph {
     Time: number;
 }
 export class Graph extends ESPStateObject<ECLGraphEx, ECLGraphEx> implements ECLGraphEx {
-    protected connection: Connection;
+    protected connection: Service;
 
     get properties(): ECLGraphEx { return this.get(); }
     get Wuid(): string { return this.get("Wuid"); }
@@ -20,9 +20,13 @@ export class Graph extends ESPStateObject<ECLGraphEx, ECLGraphEx> implements ECL
     get WhenFinished(): Date { return this.get("WhenFinished"); }
     get Time(): number { return this.get("Time"); }
 
-    constructor(href: string, wuid: string, eclGraph: ECLGraph, eclTimers: Timer[], opts: Options) {
+    constructor(connection: Service | string, wuid: string, eclGraph: ECLGraph, eclTimers: Timer[]) {
         super();
-        this.connection = new Connection(href, opts);
+        if (connection instanceof Service) {
+            this.connection = connection;
+        } else {
+            this.connection = new Service(connection);
+        }
         let duration = 0;
         for (const eclTimer of eclTimers) {
             if (eclTimer.GraphName === eclGraph.Name && !eclTimer.HasSubGraphId) {

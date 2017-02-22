@@ -1,7 +1,7 @@
 import { Promise } from "es6-promise";
-import { xml2json, XMLNode } from "../util/SAXParser";
-import { ESPConnection, Options, ResponseType } from "./ESPConnection";
-export { Options } from "./ESPConnection";
+import { xml2json, XMLNode } from "../../util/SAXParser";
+import { createTransport, ITransport } from "../Transport";
+import { ESPTransport } from "./ESPConnection";
 
 export enum WUStateID {
     Unknown = 0,
@@ -703,13 +703,19 @@ export interface WUCDebugResponse {
     Result: string;
 }
 
-export class Connection extends ESPConnection {
-    constructor(href: string = "", opts: Options) {
-        super(`${href}/WsWorkunits`, opts);
+export class Service {
+    private _transport: ESPTransport;
+
+    constructor(transport: ITransport | string) {
+        if (typeof transport === "string") {
+            this._transport = new ESPTransport(createTransport(transport), "WsWorkunits");
+        } else {
+            this._transport = new ESPTransport(transport, "WsWorkunits");
+        }
     }
 
     WUQuery(request: WUQueryRequest = {}): Promise<WUQueryResponse> {
-        return this.send("WUQuery", request);
+        return this._transport.send("WUQuery", request);
     }
 
     WUInfo(_request: WUInfoRequest): Promise<WUInfoResponse> {
@@ -731,11 +737,11 @@ export class Connection extends ESPConnection {
             SuppressResultSchemas: true,
             ..._request
         };
-        return this.send("WUInfo", request);
+        return this._transport.send("WUInfo", request);
     }
 
     WUCreate(): Promise<WUCreateResponse> {
-        return this.send("WUCreate");
+        return this._transport.send("WUCreate");
     }
 
     private objToESPArray(id: string, obj: Object, request: any) {
@@ -753,77 +759,77 @@ export class Connection extends ESPConnection {
     WUUpdate(request: WUUpdateRequest, appValues: { [key: string]: string | number | boolean } = {}, debugValues: { [key: string]: string | number | boolean } = {}): Promise<WUUpdateResponse> {
         this.objToESPArray("ApplicationValue", appValues, request);
         this.objToESPArray("DebugValue", debugValues, request);
-        return this.send("WUUpdate", request);
+        return this._transport.send("WUUpdate", request);
     }
 
     WUSubmit(request: WUSubmitRequest): Promise<WUSubmitResponse> {
-        return this.send("WUSubmit", request);
+        return this._transport.send("WUSubmit", request);
     }
 
     WUResubmit(request: WUResubmitRequest): Promise<WUResubmitResponse> {
-        this.toESPStringArray(request, "Wuids");
-        return this.send("WUResubmit", request);
+        this._transport.toESPStringArray(request, "Wuids");
+        return this._transport.send("WUResubmit", request);
     }
 
     WUQueryDetails(request: WUQueryDetailsRequest): Promise<WUQueryDetailsResponse> {
-        return this.send("WUQueryDetails", request);
+        return this._transport.send("WUQueryDetails", request);
     }
 
     WUListQueries(request: WUListQueriesRequest): Promise<WUListQueriesResponse> {
-        return this.send("WUListQueries", request);
+        return this._transport.send("WUListQueries", request);
     }
 
     WUPushEvent(request: WUPushEventRequest): Promise<WUPushEventResponse> {
-        return this.send("WUPushEvent", request);
+        return this._transport.send("WUPushEvent", request);
     }
 
     WUAction(request: WUActionRequest): Promise<WUActionResponse> {
-        this.toESPStringArray(request, "Wuids");
-        return this.send("WUAction", request);
+        this._transport.toESPStringArray(request, "Wuids");
+        return this._transport.send("WUAction", request);
     }
 
     WUGetZAPInfo(request: WUGetZAPInfoRequest): Promise<WUGetZAPInfoResponse> {
-        return this.send("WUGetZAPInfo", request);
+        return this._transport.send("WUGetZAPInfo", request);
     }
 
     WUShowScheduled(request: WUShowScheduledRequest): Promise<WUShowScheduledResponse> {
-        return this.send("WUShowScheduled", request);
+        return this._transport.send("WUShowScheduled", request);
     }
 
     WUQuerySetAliasAction(request: WUQuerySetAliasActionRequest): Promise<WUQuerySetAliasActionResponse> {
-        return this.send("WUQuerySetAliasAction", request);
+        return this._transport.send("WUQuerySetAliasAction", request);
     }
 
     WUQuerySetQueryAction(request: WUQuerySetQueryActionRequest): Promise<WUQuerySetQueryActionResponse> {
-        return this.send("WUQuerySetQueryAction", request);
+        return this._transport.send("WUQuerySetQueryAction", request);
     }
 
     WUPublishWorkunit(request: WUPublishWorkunitRequest): Promise<WUPublishWorkunitResponse> {
-        return this.send("WUPublishWorkunit", request);
+        return this._transport.send("WUPublishWorkunit", request);
     }
 
     WUGetGraph(request: WUGetGraphRequest): Promise<WUGetGraphResponse> {
-        return this.send("WUGetGraph", request);
+        return this._transport.send("WUGetGraph", request);
     }
 
     WUResult(request: WUResultRequest): Promise<WUResultResponse> {
-        return this.send("WUResult", request);
+        return this._transport.send("WUResult", request);
     }
 
     WUQueryGetGraph(request: WUQueryGetGraphRequest): Promise<WUQueryGetGraphResponse> {
-        return this.send("WUQueryGetGraph", request);
+        return this._transport.send("WUQueryGetGraph", request);
     }
 
     WUFile(request: WUFileRequest): Promise<string> {
-        return this.send("WUFile", request, ResponseType.TEXT);
+        return this._transport.send("WUFile", request, "text");
     }
 
     WUGetStats(request: WUGetStatsRequest): Promise<WUGetStatsResponse> {
-        return this.send("WUGetStats", request);
+        return this._transport.send("WUGetStats", request);
     }
 
     WUCDebug(request: WUCDebugRequest): Promise<XMLNode> {
-        return this.send("WUCDebug", request).then((response) => {
+        return this._transport.send("WUCDebug", request).then((response) => {
             const retVal = xml2json(response.Result);
             if (retVal.children.length) {
                 return retVal.children[0];

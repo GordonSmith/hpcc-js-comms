@@ -1,3 +1,6 @@
+import { createTransport, ITransport } from "../Transport";
+import { ESPTransport } from "./ESPConnection";
+
 export interface DFULogicalFile {
     Prefix: string;
     NodeGroup: string;
@@ -62,4 +65,16 @@ export interface DFUQueryResponse {
 
 export interface RootObject {
     DFUQueryResponse: DFUQueryResponse;
+}
+
+export class Service {
+    private _transport: ESPTransport;
+
+    constructor(transport: ITransport | string) {
+        if (typeof transport === "string") {
+            this._transport = new ESPTransport(createTransport(transport), "WsDFU");
+        } else {
+            this._transport = new ESPTransport(transport, "WsDFU");
+        }
+    }
 }

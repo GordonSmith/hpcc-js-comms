@@ -1,7 +1,9 @@
 import { Promise } from "es6-promise";
-import { ESPExceptions } from "../connections/ESPConnection";
-import { WsTopology } from "../connections/WsTopology";
-import * as WsWorkunits from "../connections/WsWorkunits";
+import { ESPExceptions } from "../comms/esp/ESPConnection";
+import { ActiveWorkunit } from "../comms/esp/WsSMC";
+import * as WsTopology from "../comms/esp/WsTopology";
+import * as WsWorkunits from "../comms/esp/WsWorkunits";
+import { XHRPostTransport } from "../comms/Transport";
 import { IChangedProperty, IEventListenerHandle } from "../util/EventTarget";
 import { logger } from "../util/Logging";
 import { PrimativeValueMap, XMLNode } from "../util/SAXParser";
@@ -39,12 +41,11 @@ export interface IDebugWorkunit {
 }
 
 export type WorkunitEvents = "completed" | ESPStateEvents;
-export type UWorkunitState = WsWorkunits.ECLWorkunit & WsWorkunits.Workunit & IWorkunit & IDebugWorkunit;
-export type IWorkunitState = WsWorkunits.ECLWorkunit | WsWorkunits.Workunit | IWorkunit | IDebugWorkunit;
+export type UWorkunitState = WsWorkunits.ECLWorkunit & WsWorkunits.Workunit & ActiveWorkunit & IWorkunit & IDebugWorkunit;
+export type IWorkunitState = WsWorkunits.ECLWorkunit | WsWorkunits.Workunit | ActiveWorkunit | IWorkunit | IDebugWorkunit;
 export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> implements WsWorkunits.Workunit {
-    href: string;
-    connection: WsWorkunits.Connection;
-    topologyConnection: WsTopology;
+    connection: WsWorkunits.Service;
+    topologyConnection: WsTopology.Service;
 
     private _debugMode: boolean = false;
     private _debugAllGraph: any;
@@ -72,7 +73,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     get CResults(): Result[] {
         return this.Results.ECLResult.map((eclResult) => {
             return this._resultCache.get(eclResult, () => {
-                return new Result(this.href, this.Wuid, eclResult, this.ResultViews, this.connection.opts());
+                return new Result(this.connection, this.Wuid, eclResult, this.ResultViews);
             });
         });
     }
@@ -86,7 +87,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     get Timers(): WsWorkunits.Timers { return this.get("Timers", { ECLTimer: [] }); }
     get CTimers(): Timer[] {
         return this.Timers.ECLTimer.map((eclTimer) => {
-            return new Timer(this.href, this.Wuid, eclTimer, this.connection.opts());
+            return new Timer(this.connection, this.Wuid, eclTimer);
         });
     }
 
@@ -96,7 +97,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     get CGraphs(): Graph[] {
         return this.Graphs.ECLGraph.map((eclGraph) => {
             return this._graphCache.get(eclGraph, () => {
-                return new Graph(this.href, this.Wuid, eclGraph, this.CTimers, this.connection.opts());
+                return new Graph(this.connection, this.Wuid, eclGraph, this.CTimers);
             });
         });
     }
@@ -105,7 +106,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     get ResourceURLs(): WsWorkunits.ResourceURLs { return this.get("ResourceURLs", { URL: [] }); }
     get CResourceURLs(): Resource[] {
         return this.ResourceURLs.URL.map((url) => {
-            return new Resource(this.href, this.Wuid, url, this.connection.opts());
+            return new Resource(this.connection, this.Wuid, url);
         });
     }
     get TotalClusterTime(): string { return this.get("TotalClusterTime", ""); }
@@ -134,7 +135,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     get SourceFiles(): WsWorkunits.SourceFiles { return this.get("SourceFiles", { ECLSourceFile: [] }); }
     get CSourceFiles(): SourceFile[] {
         return this.SourceFiles.ECLSourceFile.map((eclSourceFile) => {
-            return new SourceFile(this.href, this.Wuid, eclSourceFile, this.connection.opts());
+            return new SourceFile(this.connection, this.Wuid, eclSourceFile);
         });
     }
     get VariableCount(): number { return this.get("VariableCount", 0); }
@@ -152,8 +153,10 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     get DebugState(): DebugState { return this.get("DebugState", {} as DebugState); }
 
     //  Factories  ---
-    static create(href: string, opts: WsWorkunits.Options = {}): Promise<Workunit> {
-        const retVal = new Workunit(href, opts);
+    static create(href: string): Promise<Workunit>;
+    static create(connection: WsWorkunits.Service | string, topologyConnection?: WsTopology.Service | string): Promise<Workunit>;
+    static create(connection: WsWorkunits.Service | string, topologyConnection?: WsTopology.Service | string): Promise<Workunit> {
+        const retVal: Workunit = new Workunit(connection, topologyConnection);
         return retVal.connection.WUCreate().then((response) => {
             _workunits.set(retVal);
             retVal.set(response.Workunit);
@@ -161,10 +164,20 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
         });
     }
 
-    static attach(href: string, wuid: string, state?: WsWorkunits.ECLWorkunit | WsWorkunits.Workunit, opts?: WsWorkunits.Options): Workunit {
-        const retVal = _workunits.get({ Wuid: wuid }, () => {
-            return new Workunit(href, opts, wuid);
-        });
+    static attach(href: string, wuid: string, state?: WsWorkunits.ECLWorkunit | WsWorkunits.Workunit): Workunit;
+    static attach(connection: WsWorkunits.Service, topologyConnection: WsTopology.Service, wuid: string, state?: WsWorkunits.ECLWorkunit | WsWorkunits.Workunit): Workunit;
+    static attach(arg0: string | WsWorkunits.Service, arg1: string | WsTopology.Service, arg2?: WsWorkunits.ECLWorkunit | WsWorkunits.Workunit | string, state?: WsWorkunits.ECLWorkunit | WsWorkunits.Workunit): Workunit {
+        let retVal: Workunit;
+        if (arg0 instanceof WsWorkunits.Service && arg1 instanceof WsTopology.Service) {
+            retVal = _workunits.get({ Wuid: arg2 as string }, () => {
+                return new Workunit(arg0, arg1, arg2 as string);
+            });
+        } else {
+            retVal = _workunits.get({ Wuid: arg1 as string }, () => {
+                return new Workunit(arg0 as string, arg1 as string);
+            });
+            state = arg2 as WsWorkunits.ECLWorkunit | WsWorkunits.Workunit;
+        }
         if (state) {
             retVal.set(state);
         }
@@ -176,11 +189,18 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     }
 
     //  ---  ---  ---
-    protected constructor(href: string = "", opts: WsWorkunits.Options, wuid: string = "") {
+    protected constructor(connection: WsWorkunits.Service | string, topologyConnection: WsTopology.Service | string, wuid?: string) {
         super();
-        this.href = href;
-        this.connection = new WsWorkunits.Connection(href, opts);
-        this.topologyConnection = new WsTopology(href, opts);
+        if (connection instanceof WsWorkunits.Service) {
+            this.connection = connection;
+        } else {
+            this.connection = new WsWorkunits.Service(connection);
+        }
+        if (topologyConnection instanceof WsTopology.Service) {
+            this.topologyConnection = topologyConnection;
+        } else {
+            this.topologyConnection = new WsTopology.Service(topologyConnection || connection as string);
+        }
         this.clearState(wuid);
     }
 
@@ -248,6 +268,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
             case WUStateID.Completed:
             case WUStateID.Failed:
             case WUStateID.Aborted:
+            case WUStateID.NotFound:
                 return true;
             default:
         }
@@ -475,8 +496,9 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
             });
             if (!wuMissing) {
                 logger.warning("Unexpected exception:  ");
+                throw e;
             }
-            throw e;
+            return {};
         });
     }
 
@@ -522,8 +544,9 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
             });
             if (!wuMissing) {
                 logger.warning("Unexpected exception:  ");
+                throw e;
             }
-            throw e;
+            return {};
         });
     }
 

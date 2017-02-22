@@ -1,5 +1,6 @@
 import { Promise } from "es6-promise";
-import { ESPConnection, Options } from "./ESPConnection";
+import { createTransport, ITransport } from "../Transport";
+import { ESPTransport } from "./ESPConnection";
 
 export interface EclServerQueueRequest {
     EclServerQueue?: string;
@@ -22,13 +23,19 @@ export interface TpLogicalClusterQueryResponse {
     TpLogicalClusters: TpLogicalClusters;
 }
 
-export class WsTopology extends ESPConnection {
-    constructor(href: string = "", opts: Options) {
-        super(`${href}/WsTopology`, opts);
+export class Service {
+    private _transport: ESPTransport;
+
+    constructor(transport: ITransport | string) {
+        if (typeof transport === "string") {
+            this._transport = new ESPTransport(createTransport(transport), "WsTopology");
+        } else {
+            this._transport = new ESPTransport(transport, "WsTopology");
+        }
     }
 
     TpLogicalClusterQuery(request: EclServerQueueRequest = {}): Promise<TpLogicalClusterQueryResponse> {
-        return this.send("WUUpdate", request);
+        return this._transport.send("WUUpdate", request);
     }
 
     DefaultTpLogicalClusterQuery(request: EclServerQueueRequest = {}): Promise<TpLogicalCluster> {

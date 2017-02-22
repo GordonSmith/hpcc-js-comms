@@ -1,8 +1,7 @@
 import { Promise } from "es6-promise";
-import { exists } from "../connections/ESPConnection";
-import { DFULogicalFile } from "../connections/WsDFU";
-import { ECLResult, ECLSchemas, WUResultRequest, WUResultResponse, Options } from "../connections/WsWorkunits";
-import { Connection } from "../connections/WsWorkunits";
+import { exists } from "../comms/esp/ESPConnection";
+import { DFULogicalFile } from "../comms/esp/WsDFU";
+import { ECLResult, ECLSchemas, Service, WUResultRequest, WUResultResponse } from "../comms/esp/WsWorkunits";
 import { parseXSD, XSDSchema } from "../util/SAXParser";
 import { Cache, ESPStateObject } from "./ESPStateObject";
 
@@ -11,7 +10,7 @@ export interface ECLResultEx extends ECLResult {
     ResultViews: any[];
 }
 export class Result extends ESPStateObject<ECLResultEx & DFULogicalFile, ECLResultEx | DFULogicalFile> implements ECLResultEx {
-    protected connection: Connection;
+    protected connection: Service;
     protected xsdSchema: XSDSchema;
 
     get properties(): ECLResult { return this.get(); }
@@ -28,9 +27,13 @@ export class Result extends ESPStateObject<ECLResultEx & DFULogicalFile, ECLResu
     get NodeGroup(): string { return this.get("NodeGroup"); }
     get ResultViews(): any[] { return this.get("ResultViews"); }
 
-    constructor(href: string, wuid: string, eclResult: ECLResult, resultViews: any[], opts: Options) {
+    constructor(connection: Service | string, wuid: string, eclResult: ECLResult, resultViews: any[]) {
         super();
-        this.connection = new Connection(href, opts);
+        if (connection instanceof Service) {
+            this.connection = connection;
+        } else {
+            this.connection = new Service(connection);
+        }
         this.set({
             Wuid: wuid,
             ResultViews: resultViews,

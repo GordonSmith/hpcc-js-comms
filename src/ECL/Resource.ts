@@ -1,4 +1,4 @@
-import { Connection, Options } from "../connections/WsWorkunits";
+import { Service } from "../comms/esp/WsWorkunits";
 import { ESPStateObject } from "./ESPStateObject";
 
 export interface ResourceEx {
@@ -9,7 +9,7 @@ export interface ResourceEx {
 }
 
 export class Resource extends ESPStateObject<ResourceEx, ResourceEx> implements ResourceEx {
-    protected connection: Connection;
+    protected connection: Service;
 
     get properties(): ResourceEx { return this.get(); }
     get Wuid(): string { return this.get("Wuid"); }
@@ -17,9 +17,13 @@ export class Resource extends ESPStateObject<ResourceEx, ResourceEx> implements 
     get DisplayName(): string { return this.get("DisplayName"); }
     get DisplayPath(): string { return this.get("DisplayPath"); }
 
-    constructor(href: string, wuid: string, url: string, opts: Options) {
+    constructor(connection: Service | string, wuid: string, url: string) {
         super();
-        this.connection = new Connection(href, opts);
+        if (connection instanceof Service) {
+            this.connection = connection;
+        } else {
+            this.connection = new Service(connection);
+        }
 
         const cleanedURL = url.split("\\").join("/");
         const urlParts = cleanedURL.split("/");

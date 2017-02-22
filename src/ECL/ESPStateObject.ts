@@ -1,5 +1,5 @@
 import * as sum from "hash-sum";
-import { exists, inner } from "../connections/ESPConnection";
+import { exists, inner } from "../comms/esp/ESPConnection";
 import { EventTarget, IChangedProperty } from "../util/EventTarget";
 
 export type ESPStatePropCallback = (changes: IChangedProperty) => void;

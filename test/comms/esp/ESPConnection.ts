@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { espTime2Seconds } from "../../src/connections/ESPConnection";
+import { espTime2Seconds } from "../../../src/comms/esp/ESPConnection";
 
 describe("ESPConnection", function () {
     it("espTime2SecondsTests", function () {

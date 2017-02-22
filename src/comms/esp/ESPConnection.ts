@@ -1,7 +1,5 @@
 import { Promise } from "es6-promise";
-import { logger } from "../util/Logging";
-import { Connection, ConnectionError, VERB, Options } from "./Connection";
-export { Options } from "./Connection";
+import { ITransport, ResponseType, Transport } from "../Transport";
 
 export function inner(prop: string, obj: any): any {
     if (prop === void 0 || obj === void 0) return void 0;
@@ -79,12 +77,48 @@ export class ESPExceptions extends Error implements Exceptions {
     }
 }
 
-export enum ResponseType {
-    JSON,
-    TEXT
-}
+export class ESPTransport extends Transport {
+    private _transport: ITransport;
+    private _service: string;
 
-export class ESPConnection extends Connection {
+    constructor(transport: ITransport, service: string) {
+        super("");
+        this._transport = transport;
+        this._service = service;
+    }
+
+    toESPStringArray(target: any, arrayName: string): Object {
+        if (isArray(target[arrayName])) {
+            for (let i = 0; i < target[arrayName].length; ++i) {
+                target[arrayName + "_i" + i] = target[arrayName][i];
+            }
+            delete target[arrayName];
+        }
+        return target;
+    }
+
+    send(action: string, request: any = {}, responseType: ResponseType = "json"): Promise<any> {
+        const serviceAction = this.joinUrl(this._service, action + ".json");
+        return this._transport.send(serviceAction, request, responseType).then((response) => {
+            if (responseType === "json") {
+                if (response.Exceptions) {
+                    throw new ESPExceptions(action, request, response.Exceptions);
+                }
+                const retVal = response[`${action === "WUCDebug" ? "WUDebug" : action}Response`];
+                if (!retVal) {
+                    throw new ESPExceptions(action, request, {
+                        Source: "ESPTransport.transmit",
+                        Exception: [{ Code: 0, Message: "Missing Response" }]
+                    });
+                }
+                return retVal;
+            }
+            return response;
+        });
+    }
+}
+/*
+class ESPConnection extends Connection {
     private readonly href: string;
 
     constructor(href: string, opts: Options) {
@@ -158,3 +192,4 @@ export class ESPConnection extends Connection {
         return target;
     }
 }
+*/

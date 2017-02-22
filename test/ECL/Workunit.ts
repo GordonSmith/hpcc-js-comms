@@ -38,31 +38,17 @@ describe("Workunit", function () {
         it("results", function () {
             return wu1.fetchResults().then((results) => {
                 expect(results.length).equals(1);
-                return wu1.CResults[0].fetchXMLSchema().then((result) => {
-                    // console.log(JSON.stringify(results));
-                    return wu1;
+                return wu1.CResults[0].fetchXMLSchema().then((schema) => {
+                    expect(schema.root).exist;
+                    return schema;
                 });
-                // console.log(JSON.stringify(results));
             });
         });
-    });
-    describe("XSD Parsing", function () {
-        it("basic", function () {
-            const wu = Workunit.attach(VM_HOST, wuid);
-            let result;
-            return wu.fetchResults().then((response) => {
-                result = wu.CResults[0];
-                return result.fetchXMLSchema().then((response2) => {
-                    // console.log(JSON.stringify(results));
-                    return wu;
-                }).then(() => {
-                    /*
-                    return result.fetchResult().then((response) => {
-                        // console.log(JSON.stringify(results));
-                        return wu;
-                    });
-                    */
-                });
+        it("delete", function () {
+            return wu1.delete().then(function (response) {
+                expect(wu1.isComplete()).is.true;
+                expect(wu1.isDeleted()).is.true;
+                return response;
             });
         });
     });

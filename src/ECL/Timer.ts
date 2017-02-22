@@ -1,5 +1,5 @@
-import { espTime2Seconds } from "../connections/ESPConnection";
-import { Connection, ECLTimer, Options } from "../connections/WsWorkunits";
+import { espTime2Seconds } from "../comms/esp/ESPConnection";
+import { ECLTimer, Service } from "../comms/esp/WsWorkunits";
 import { ESPStateObject } from "./ESPStateObject";
 
 export interface ECLTimerEx extends ECLTimer {
@@ -9,7 +9,7 @@ export interface ECLTimerEx extends ECLTimer {
 }
 
 export class Timer extends ESPStateObject<ECLTimerEx, ECLTimerEx> implements ECLTimerEx {
-    protected connection: Connection;
+    protected connection: Service;
 
     get properties(): ECLTimer { return this.get(); }
     get Wuid(): string { return this.get("Wuid"); }
@@ -21,9 +21,13 @@ export class Timer extends ESPStateObject<ECLTimerEx, ECLTimerEx> implements ECL
     get HasSubGraphId(): boolean { return this.get("HasSubGraphId"); }
     get count(): number { return this.get("count"); }
 
-    constructor(href: string, wuid: string, eclTimer: ECLTimer, opts: Options) {
+    constructor(connection: Service | string, wuid: string, eclTimer: ECLTimer) {
         super();
-        this.connection = new Connection(href, opts);
+        if (connection instanceof Service) {
+            this.connection = connection;
+        } else {
+            this.connection = new Service(connection);
+        }
 
         const secs = espTime2Seconds(eclTimer.Value);
         this.set({

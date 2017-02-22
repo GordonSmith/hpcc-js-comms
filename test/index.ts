@@ -1,3 +1,6 @@
+import "./comms/esp/WsWorkunits";
+import "./comms/google/maps";
+
 import "./connections/Connection";
 import "./connections/ESPConnection";
 import "./connections/WsDFU";
