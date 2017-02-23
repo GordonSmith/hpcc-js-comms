@@ -1,4 +1,4 @@
-export { JSONPTransport, XHRGetTransport, XHRPostTransport } from "./comms/Transport";
+export { JSONPTransport, XHRGetTransport, XHRPostTransport, createTransport, setTransportFactory } from "./comms/Transport";
 export { espTime2Seconds } from "./comms/esp/ESPConnection";
 export { Service as WsWorkunits, WUAction } from "./comms/esp/WsWorkunits";
 export { Service as WsTopology } from "./comms/esp/WsTopology";

@@ -1,5 +1,5 @@
-import { expect } from "chai";
 import { Cache, ESPStateObject } from "../../src/ECL/ESPStateObject";
+import { describe, expect, it } from "../lib";
 
 describe("Cache", function () {
     it("basic", function () {
@@ -52,4 +52,3 @@ describe("ESPStateObject", function () {
         stateObj.set({ aaa: "hello", bbb: 123 });
     });
 });
-

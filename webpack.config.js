@@ -23,7 +23,9 @@ const config = {
         rules: [
             {
                 test: /\.ts$/,
-                loader: "awesome-typescript-loader"
+                loader: "awesome-typescript-loader",
+                options: {
+                }
             }
         ]
     },
@@ -34,13 +36,13 @@ const config = {
     ]
 };
 
+//  Uncomment for unittesting in webbrowser
+// config.entry.push("./test/index.ts");
 switch (process.env.NODE_ENV) {
     case "watch":
         config.watch = true;
         config.watchOptions = {
         };
-        //  Uncomment for unittesting in webbrowser
-        //config.entry.push("./test/index.ts");
         break;
     case "min":
         config.output.filename = 'hpcc-platform-comms.min.js';
@@ -54,6 +56,11 @@ switch (process.env.NODE_ENV) {
             beautify: true,
             mangle: false
         }));
+        break;
+    case "test":
+        config.entry = ["./test/index.ts"];
+        config.output.filename = 'hpcc-platform-comms.test.js';
+        config.module.rules[0].options.configFileName = "./tsconfig-test.json"
         break;
     default:
 }

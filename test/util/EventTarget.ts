@@ -1,5 +1,5 @@
-import { expect } from "chai";
 import { EventTarget } from "../../src/util/EventTarget";
+import { describe, expect, it } from "../lib";
 
 describe("EventTarget", function () {
     it("reference counter", function () {

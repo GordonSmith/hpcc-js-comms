@@ -1,6 +1,6 @@
-import { expect } from "chai";
 import { Promise } from "es6-promise";
 import { Workunit } from "../../src/ECL/Workunit";
+import { describe, expect, it } from "../lib";
 
 const VM_HOST: string = "http://192.168.3.22:8010";
 // const VM_URL: string = "http://192.168.3.22:8010/WsWorkunits";

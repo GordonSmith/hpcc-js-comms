@@ -1,5 +1,5 @@
-import { expect } from "chai";
 import { GoogleMapsWebService } from "../../../src/comms/google/maps";
+import { describe, expect, it } from "../../lib";
 
 describe("GoogleMaps", function () {
     it("Geocode", function () {

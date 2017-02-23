@@ -1,16 +1,22 @@
-import { expect } from "chai";
 import { ECLWorkunit, Service } from "../../../src/comms/esp/WsWorkunits";
-import { createTransport } from "../../../src/comms/Transport";
+import { JSONPTransport, XHRGetTransport, XHRPostTransport } from "../../../src/comms/Transport";
+import { describe, expect, isBrowser, it } from "../../lib";
 
 describe("WsWorkunits", function () {
     describe("POST", function () {
-        const wsWorkunits = new Service(createTransport("http://192.168.3.22:8010/"));
+        const wsWorkunits = new Service(new XHRPostTransport("http://192.168.3.22:8010/"));
         doTest(wsWorkunits);
     });
     describe("GET", function () {
-        const wsWorkunits = new Service(createTransport("http://192.168.3.22:8010/"));
+        const wsWorkunits = new Service(new XHRGetTransport("http://192.168.3.22:8010/"));
         doTest(wsWorkunits);
     });
+    if (isBrowser()) {
+        describe("JSONP", function () {
+            const wsWorkunits = new Service(new JSONPTransport("http://192.168.3.22:8010/"));
+            doTest(wsWorkunits);
+        });
+    }
 });
 
 function doTest(wsWorkunits) {
