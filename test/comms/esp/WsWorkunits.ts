@@ -1,6 +1,6 @@
 import { ECLWorkunit, Service } from "../../../src/comms/esp/WsWorkunits";
 import { JSONPTransport, XHRGetTransport, XHRPostTransport } from "../../../src/comms/Transport";
-import { describe, ESP_URL, expect, isBrowser, isTravis, it } from "../../lib";
+import { describe, ESP_URL, expect, isBrowser, it } from "../../lib";
 
 describe("WsWorkunits", function () {
     describe("POST", function (done) {
@@ -36,3 +36,4 @@ function doTest(wsWorkunits) {
             return response;
         });
     });
+}
