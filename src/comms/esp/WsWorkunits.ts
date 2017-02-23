@@ -785,6 +785,7 @@ export class Service {
 
     WUAction(request: WUActionRequest): Promise<WUActionResponse> {
         this._transport.toESPStringArray(request, "Wuids");
+        (<any>request).ActionType = request.WUActionType; //  v5.x compatibility
         return this._transport.send("WUAction", request);
     }
 
