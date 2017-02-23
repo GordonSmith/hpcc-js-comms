@@ -35,7 +35,7 @@ describe("ESPStateObject", function () {
     }
     const stateObj: any = new ESPStateObject<ITest, ITest>();
     stateObj.on("changed", (changes) => {
-        console.log(`changed:  ${JSON.stringify(changes)}`);
+        // console.log(`changed:  ${JSON.stringify(changes)}`);
     });
     it("basic", function () {
         expect(stateObj.has("aaa")).to.be.false;

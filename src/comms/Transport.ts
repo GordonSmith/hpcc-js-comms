@@ -92,11 +92,11 @@ export class JSONPTransport extends Transport implements ITransport {
                     respondedTimeout -= respondedTick;
                     if (respondedTimeout <= 0) {
                         clearInterval(progress);
-                        console.log("Request timeout:  " + script.src);
+                        // console.log("Request timeout:  " + script.src);
                         doCallback();
                         reject(Error("Request timeout:  " + script.src));
                     } else {
-                        console.log("Request pending (" + respondedTimeout / 1000 + " sec):  " + script.src);
+                        // console.log("Request pending (" + respondedTimeout / 1000 + " sec):  " + script.src);
                     }
                 }
             }, respondedTick);

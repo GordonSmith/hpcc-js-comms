@@ -3,7 +3,6 @@ import { ESPExceptions } from "../comms/esp/ESPConnection";
 import { ActiveWorkunit } from "../comms/esp/WsSMC";
 import * as WsTopology from "../comms/esp/WsTopology";
 import * as WsWorkunits from "../comms/esp/WsWorkunits";
-import { XHRPostTransport } from "../comms/Transport";
 import { IChangedProperty, IEventListenerHandle } from "../util/EventTarget";
 import { logger } from "../util/Logging";
 import { PrimativeValueMap, XMLNode } from "../util/SAXParser";
@@ -600,7 +599,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
                 return xmlNode.name === command;
             })[0];
         }).catch((e) => {
-            console.log(e);
+            // console.log(e);
             return Promise.resolve(null);
         });
     }
