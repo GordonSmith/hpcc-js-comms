@@ -1,6 +1,6 @@
 import { Promise } from "es6-promise";
 import { Workunit } from "../../src/ECL/Workunit";
-import { describe, expect, it } from "../lib";
+import { describe, expect, isTravis, it } from "../lib";
 
 const VM_HOST: string = "http://192.168.3.22:8010";
 // const VM_URL: string = "http://192.168.3.22:8010/WsWorkunits";
@@ -8,6 +8,7 @@ const VM_HOST: string = "http://192.168.3.22:8010";
 describe("Workunit", function () {
     let wuid: string;
     describe("simple life cycle", function () {
+        this.pending = isTravis();
         let wu1: Workunit;
         it("creation", function () {
             return Workunit.create(VM_HOST).then((wu) => {
