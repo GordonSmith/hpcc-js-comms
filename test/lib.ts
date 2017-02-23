@@ -6,4 +6,3 @@ const root = new Function("try {return global;}catch(e){return window;}")();
 export const describe = root.describe;
 export const it = root.it;
 export const ESP_URL = isTravis() ? "http://52.51.90.23:8010/" : "http://192.168.3.22:8010/";
-

@@ -1,6 +1,6 @@
 import { Promise } from "es6-promise";
 import { Workunit } from "../../src/ECL/Workunit";
-import { describe, ESP_URL, expect, isTravis, it } from "../lib";
+import { describe, ESP_URL, expect, it } from "../lib";
 
 describe("Workunit", function () {
     let wuid: string;
