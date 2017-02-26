@@ -1,8 +1,13 @@
 {
     "name": "hpcc-platform-comms",
-    "version": "0.0.1",
+    "version": "0.0.15",
     "description": "HPCC Platform Client Comms Library (TS/JS)",
-    "keyword": [],
+    "keyword": [
+        "HPCC",
+        "ECL",
+        "TypeScript",
+        "JavaScript"
+    ],
     "homepage": "",
     "license": "Apache-2.0",
     "author": "HPCC Systems",
@@ -21,9 +26,12 @@
         "webpack-min-stats": "cross-env NODE_ENV=min webpack --json > stats.json",
         "webpack-min-debug": "cross-env NODE_ENV=min-debug webpack",
         "build": "npm run tsc-es2015 && npm run tsc-commonjs && npm run webpack && npm run webpack-min",
+        "clean": "rimraf dist && rimraf docx",
+        "prepublish": "npm run clean && npm run build && npm run doc",
         "watch": "cross-env NODE_ENV=watch webpack",
         "lint": "tslint ./src/**/*",
-        "test": "npm run lint && npm run tsc-test && mocha ./dist-test/test/index.js",
+        "test": "mocha ./dist-test/test/index.js",
+        "pretest": "npm run lint && npm run tsc-test",
         "doc": "typedoc --out ./docx/ --tsconfig ./tsconfig.json --exclude node_modules --excludeNotExported --ignoreCompilerErrors src"
     },
     "dependencies": {
@@ -38,6 +46,7 @@
         "cross-env": "^3.1.4",
         "mocha": "^3.2.0",
         "request": "^2.79.0",
+        "rimraf": "^2.6.1",
         "tslint": "^4.4.2",
         "typedoc": "^0.5.7",
         "typescript": "^2.2.1",
