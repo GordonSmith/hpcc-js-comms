@@ -1,6 +1,6 @@
 {
     "name": "hpcc-platform-comms",
-    "version": "0.0.15",
+    "version": "0.0.17",
     "description": "HPCC Platform Client Comms Library (TS/JS)",
     "keyword": [
         "HPCC",
