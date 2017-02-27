@@ -358,13 +358,13 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
         return Promise.all([
             refreshPromise,
             debugPromise
-        ]).then((responses) => {
+        ]).then(() => {
             return this;
         });
     }
 
     fetchResults(): Promise<Result[]> {
-        return this.WUInfo({ IncludeResults: true }).then((response) => {
+        return this.WUInfo({ IncludeResults: true }).then(() => {
             return this.CResults;
         });
     };
@@ -451,7 +451,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     }
 
     watchUntilComplete(callback?: ESPStateCallback): Promise<this> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve, _) => {
             const watchHandle = this.watch((changes) => {
                 if (callback) {
                     callback(changes);
@@ -465,7 +465,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
     }
 
     watchUntilRunning(callback?: ESPStateCallback): Promise<this> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve, _) => {
             const watchHandle = this.watch((changes) => {
                 if (callback) {
                     callback(changes);
@@ -521,7 +521,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
                 response.Workunit.ResourceURLCount = response.Workunit.ResourceURLCount - 1;
             }
             if (response.Workunit.ResourceURLs && response.Workunit.ResourceURLs.URL) {
-                response.Workunit.ResourceURLs.URL = response.Workunit.ResourceURLs.URL.filter((row, idx) => {
+                response.Workunit.ResourceURLs.URL = response.Workunit.ResourceURLs.URL.filter((_, idx) => {
                     return idx > 0;
                 });
             }
@@ -598,7 +598,7 @@ export class Workunit extends ESPStateObject<UWorkunitState, IWorkunitState> imp
             return response.children.filter((xmlNode) => {
                 return xmlNode.name === command;
             })[0];
-        }).catch((e) => {
+        }).catch((_) => {
             // console.log(e);
             return Promise.resolve(null);
         });

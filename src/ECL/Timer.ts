@@ -1,5 +1,5 @@
-import { espTime2Seconds } from "../comms/esp/ESPConnection";
 import { ECLTimer, Service } from "../comms/esp/WsWorkunits";
+import { espTime2Seconds } from "../util/esp";
 import { ESPStateObject } from "./ESPStateObject";
 
 export interface ECLTimerEx extends ECLTimer {

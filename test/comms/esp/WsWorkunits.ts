@@ -3,7 +3,7 @@ import { JSONPTransport, XHRGetTransport, XHRPostTransport } from "../../../src/
 import { describe, ESP_URL, expect, isBrowser, it } from "../../lib";
 
 describe("WsWorkunits", function () {
-    describe("POST", function (done) {
+    describe("POST", function () {
         const wsWorkunits = new Service(new XHRPostTransport(ESP_URL));
         doTest(wsWorkunits);
     });

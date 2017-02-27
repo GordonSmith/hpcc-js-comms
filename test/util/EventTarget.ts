@@ -3,7 +3,7 @@ import { describe, expect, it } from "../lib";
 
 describe("EventTarget", function () {
     it("reference counter", function () {
-        function echoEvent(...args: any[]) {
+        function echoEvent() {
             // console.log(JSON.stringify(args));
         }
         const et = new EventTarget("aaa", "bbb", "zzz");

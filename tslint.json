@@ -29,9 +29,6 @@
         "member-ordering": [
             true
         ],
-        "no-unused-variable": [
-            true
-        ],
         "max-classes-per-file": [
             false
         ],

@@ -8,6 +8,8 @@
         "sourceMap": true,
         "importHelpers": true,
         "declaration": false,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
         "lib": [
             "es5",
             "dom"

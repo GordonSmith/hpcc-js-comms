@@ -34,7 +34,7 @@ describe("ESPStateObject", function () {
         bbb: number;
     }
     const stateObj: any = new ESPStateObject<ITest, ITest>();
-    stateObj.on("changed", (changes) => {
+    stateObj.on("changed", () => {
         // console.log(`changed:  ${JSON.stringify(changes)}`);
     });
     it("basic", function () {

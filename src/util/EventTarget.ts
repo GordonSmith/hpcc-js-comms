@@ -32,7 +32,7 @@ class EventListenerHandle<T extends string> implements IEventListenerHandle {
 export class EventTarget<T extends string> {
     private _eventObservers: { [eventID: string]: Function[] } = {};
 
-    constructor(...args: T[]) {
+    constructor(..._: T[]) {
     }
 
     addEventListener(eventID: T, callback: Function): IEventListenerHandle {

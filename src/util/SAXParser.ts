@@ -103,7 +103,7 @@ export class SAXStackParser {
         return this.stack.push(newNode);
     }
 
-    endXMLNode(node): XMLNode {
+    endXMLNode(_): XMLNode {
         return this.stack.pop();
     }
 

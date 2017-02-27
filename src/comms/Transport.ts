@@ -70,7 +70,7 @@ export class JSONPTransport extends Transport implements ITransport {
         this.timeout = timeout;
     }
 
-    send(action: string, request: any, responseType: ResponseType = "json"): Promise<any> {
+    send(action: string, request: any): Promise<any> {
         return new Promise<any>((resolve, reject) => {
             let respondedTimeout = this.timeout * 1000;
             const respondedTick = 5000;
