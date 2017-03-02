@@ -1,16 +1,18 @@
-export { JSONPTransport, XHRGetTransport, XHRPostTransport, createTransport, setTransportFactory } from "./comms/Transport";
+export { JSONPTransport, XHRGetTransport, XHRPostTransport, createTransport, setTransportFactory } from "./comms/index";
 
-export { Service as WsWorkunits, WUAction } from "./comms/esp/WsWorkunits";
-export { Service as WsTopology } from "./comms/esp/WsTopology";
-export { Service as WsSMC } from "./comms/esp/WsSMC";
-export { Service as WsDFU } from "./comms/esp/WsDFU";
+export { Service as WsWorkunits, WUAction } from "./esp/services/WsWorkunits";
+export { Service as WsTopology } from "./esp/services/WsTopology";
+export { Service as WsSMC } from "./esp/services/WsSMC";
+export { Service as WsDFU } from "./esp/services/WsDFU";
 
-export { Workunit } from "./ECL/Workunit";
-export { Result } from "./ECL/Result";
-export { SourceFile } from "./ECL/SourceFile";
-export { Resource } from "./ECL/Resource";
-export { Timer } from "./ECL/Timer";
-export { XGMMLGraph, GraphItem } from "./ECL/Graph";
+export { Workunit } from "./esp/ecl/Workunit";
+export { Result } from "./esp/ecl/Result";
+export { SourceFile } from "./esp/ecl/SourceFile";
+export { Resource } from "./esp/ecl/Resource";
+export { Timer } from "./esp/ecl/Timer";
+export { XGMMLGraph, GraphItem } from "./esp/ecl/Graph";
 
-export { IEventListenerHandle } from "./util/EventTarget";
+export { IObserverHandle } from "./util/observer";
 export { espTime2Seconds } from "./util/esp";
+
+export const commsMsg = "Hello and Welcome no xmldom";

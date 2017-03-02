@@ -22,11 +22,11 @@
                 "--timeout",
                 "999999",
                 "--colors",
-                "${workspaceRoot}/dist-test/test"
+                "${workspaceRoot}/tmp/test-commonjs/test/index-node.js"
             ],
             "internalConsoleOptions": "openOnSessionStart",
             "outFiles": [
-                "${workspaceRoot}/dist-test/**/*"
+                "${workspaceRoot}/tmp/test-commonjs/**/*"
             ]
         },
         {
@@ -44,7 +44,7 @@
             "name": "Chrome Debug",
             "type": "chrome",
             "request": "launch",
-            "url": "file:///C:/Users/gordon/git/hpcc-platform-comms/test/runner-browser.html",
+            "url": "file:///C:/Users/gordon/git/hpcc-js/packages/comms/test/index.html",
             "webRoot": "${workspaceRoot}/test"
         }
     ]

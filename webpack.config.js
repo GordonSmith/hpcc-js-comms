@@ -1,20 +1,18 @@
 const path = require('path');
 const webpack = require('webpack');
-const nodeExternals = require('webpack-node-externals');
+const ModuleMappingPlugin = require('module-mapping-webpack-plugin');
 
 const config = {
-    entry: ["./src/index.ts"],
+    entry: "./src/index.ts",
     devtool: "source-map",
     output: {
-        path: path.resolve(__dirname, 'dist'),
-        filename: 'hpcc-platform-comms.js',
-        library: "HPCCPlatformComms",
+        path: path.resolve(__dirname, 'lib-browser'),
+        filename: 'index.js',
+        sourceMapFilename: 'index.map',
+        library: "HPCCComms",
         libraryTarget: "umd"
     },
     resolve: {
-        alias: {
-            "request$": "xhr"
-        },
         extensions: [
             ".ts", ".js"
         ]
@@ -29,10 +27,10 @@ const config = {
             }
         ]
     },
-    externals: {
-        "xmldom": "window"
-    },
     plugins: [
+        new ModuleMappingPlugin({
+            './src/platform/node.ts': './src/platform/browser.ts'
+        })
     ]
 };
 
@@ -45,12 +43,16 @@ switch (process.env.NODE_ENV) {
         };
         break;
     case "min":
-        config.output.filename = 'hpcc-platform-comms.min.js';
+        config.output.filename = 'index.min.js';
+        delete config.devtool;
+        delete config.output.sourceMapFilename;
         config.plugins.push(new webpack.optimize.OccurrenceOrderPlugin());
         config.plugins.push(new webpack.optimize.UglifyJsPlugin());
         break;
     case "min-debug":
-        config.output.filename = 'hpcc-platform-comms.min-debug.js';
+        config.output.filename = 'index.min-debug.js';
+        delete config.devtool;
+        delete config.output.sourceMapFilename;
         config.plugins.push(new webpack.optimize.OccurrenceOrderPlugin());
         config.plugins.push(new webpack.optimize.UglifyJsPlugin({
             beautify: true,
@@ -58,9 +60,10 @@ switch (process.env.NODE_ENV) {
         }));
         break;
     case "test":
-        config.entry = ["./test/index.ts"];
-        config.output.filename = 'hpcc-platform-comms.test.js';
-        config.module.rules[0].options.configFileName = "./tsconfig-test.json"
+        config.entry = "./test/collections/stack.ts";
+        config.output.filename = 'index.test.js';
+        config.output.sourceMapFilename = 'index.test.map';
+        config.module.rules[0].options.configFileName = "./tsconfig-test.json";
         break;
     default:
 }

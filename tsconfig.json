@@ -1,22 +1,30 @@
 {
     "compilerOptions": {
-        "rootDir": "./src",
-        "outDir": "./dist/es6",
         "target": "es5",
-        "moduleResolution": "node",
+        "outDir": "./tmp",
         "module": "es6",
-        "sourceMap": true,
+        "moduleResolution": "node",
         "importHelpers": true,
-        "declaration": false,
+        "declaration": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
+        "noImplicitAny": false,
+        "noEmitOnError": false,
+        "strictNullChecks": false,
+        "sourceMap": true,
         "lib": [
             "es5",
+            "es2015.promise",
             "dom"
+        ],
+        "types": [
+            "mocha",
+            "chai"
         ]
     },
     "include": [
-        "./src"
+        "./src",
+        "./test"
     ],
     "compileOnSave": true
 }

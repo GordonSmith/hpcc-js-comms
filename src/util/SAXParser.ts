@@ -1,4 +1,5 @@
-import { DOMParser } from "xmldom";
+import { Stack } from "../collections/stack";
+// import { DOMParser } from "../platform/node";
 
 export type PrimativeValue = string;
 export type PrimativeValueMap = { [key: string]: PrimativeValue };
@@ -22,27 +23,6 @@ export class XMLNode {
 
     appendChild(child: XMLNode) {
         this.children.push(child);
-    }
-}
-
-export class Stack<T> {
-    private stack: T[] = [];
-
-    push(e: T) {
-        this.stack.push(e);
-        return e;
-    }
-
-    pop(): T {
-        return this.stack.pop();
-    }
-
-    top(): T | null {
-        return this.stack.length ? this.stack[this.stack.length - 1] : null;
-    }
-
-    depth(): number {
-        return this.stack.length;
     }
 }
 

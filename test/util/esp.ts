@@ -1,7 +1,7 @@
+import { expect } from "chai";
 import { espTime2Seconds } from "../../src/util/esp";
-import { describe, expect, it } from "../lib";
 
-describe("ESPConnection", function () {
+describe("ESPTransport", function () {
     it("espTime2SecondsTests", function () {
         const tests = [
             { str: "1.1s", expected: 1.1 },
@@ -13,7 +13,7 @@ describe("ESPConnection", function () {
             { str: "6:6:6.6", expected: 21966.6 },
             { str: "7 days 7:07:7.7", expected: 630427.7 }
         ];
-        tests.forEach(function (test, idx) {
+        tests.forEach(function (test) {
             expect(espTime2Seconds(test.str)).to.equals(test.expected);
         }, this);
         expect(espTime2Seconds("3.3ns")).to.be.closeTo(0.0000000033, 0.00000000001);

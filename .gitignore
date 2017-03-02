@@ -1,6 +1,8 @@
 .vscode
+.nyc_output
+coverage
 node_modules
-dist
-dist-test
+lib/
+tmp/
 docx
 
