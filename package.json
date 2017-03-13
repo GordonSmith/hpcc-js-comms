@@ -1,6 +1,6 @@
 {
     "name": "@schmoo/comms",
-    "version": "0.0.20",
+    "version": "0.0.21",
     "description": "hpcc-platform-comms - HPCC Platform Comms Library",
     "main": "lib/comms.js",
     "module": "lib/index",
