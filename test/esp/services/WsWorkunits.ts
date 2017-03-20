@@ -4,7 +4,7 @@ import { JSONPTransport, XHRGetTransport, XHRPostTransport } from "../../../src/
 import { ECLWorkunit, Service } from "../../../src/esp/services/WsWorkunits";
 import { ESP_URL, isBrowser, isTravis } from "../../lib";
 
-describe.only("WsWorkunits", function () {
+describe("WsWorkunits", function () {
     describe("POST", function () {
         const wsWorkunits = new Service(new XHRPostTransport(ESP_URL));
         doTest(wsWorkunits);

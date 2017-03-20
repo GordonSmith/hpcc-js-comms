@@ -1,7 +1,7 @@
 {
-    "name": "@schmoo/comms",
-    "version": "0.0.21",
-    "description": "hpcc-platform-comms - HPCC Platform Comms Library",
+    "name": "@hpcc-js/comms",
+    "version": "0.0.22",
+    "description": "hpcc-js-comms - HPCC Platform Comms Library",
     "main": "lib/comms.js",
     "module": "lib/index",
     "jsnext": "lib/index.js",
@@ -9,11 +9,7 @@
     "browser": "lib/comms-browser.js",
     "files": [
         "lib/**/*.d.ts",
-        "lib/**/*.js",
-        "lib-es6/**/*.d.ts",
-        "lib-es6/**/*.js",
-        "lib-browser/**/*.d.ts",
-        "lib-browser/**/*.js"
+        "lib/**/*.js"
     ],
     "directories": {
         "lib": "lib/"
@@ -36,7 +32,7 @@
         "watch": "cross-env RUNTIME=browser BUILD=test rollup -w -c",
         "lint": "tslint ./src/**/*",
         "test": "mocha ./lib/comms-test.js",
-        "prepublish": "npm run clean && npm run build",
+        "prepublishXXX": "npm run clean && npm run build",
         "pretest": "npm run build-test",
         "coverage": "nyc --reporter=html npm test",
         "doc": "typedoc --out ./docx/ --tsconfig ./tsconfig.json --exclude node_modules --excludeNotExported --ignoreCompilerErrors src"
@@ -71,13 +67,13 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/GordonSmith/hpcc-platform-comms.git"
+        "url": "https://github.com/hpcc-systems/hpcc-js-comms.git"
     },
     "author": "Gordon Smith <gordonjsmith@gmail.com>",
     "contributors": [],
     "license": "Apache-2.0",
     "bugs": {
-        "url": "https://github.com/GordonSmith/hpcc-platform-comms/issues"
+        "url": "https://github.com/hpcc-systems/hpcc-js-comms/issues"
     },
-    "homepage": "https://github.com/GordonSmith/hpcc-platform-comms"
+    "homepage": "https://github.com/hpcc-systems/hpcc-js-comms"
 }
