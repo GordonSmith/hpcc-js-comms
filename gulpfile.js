@@ -126,10 +126,11 @@ gulp.task("bundle-browser", function () {
     ]);
 });
 
+const nodeLibs = ["os", "path", "fs", "child_process"];
 gulp.task("bundle-node", function () {
     return Promise.all([
-        doRollup("lib/index-node", "dist/comms-node", "cjs", false, Object.keys(dependencies)),
-        doRollup("lib/index-node", "dist/comms-node", "cjs", true, Object.keys(dependencies))
+        doRollup("lib/index-node", "dist/comms-node", "cjs", false, Object.keys(dependencies).concat(nodeLibs)),
+        doRollup("lib/index-node", "dist/comms-node", "cjs", true, Object.keys(dependencies).concat(nodeLibs))
     ]);
 });
 

@@ -7,4 +7,5 @@ if (!isTravis()) {
 
 //  Load tests  ---
 import "../src/index-node";
+import "./clienttools/eclcc";
 import "./index-common";

@@ -1,3 +1,8 @@
+// DOM Parser polyfill  ---
+import { DOMParser } from "xmldom";
+import { root } from "./util/platform";
+root.DOMParser = DOMParser;
+
 //  XHR polyfill  ---
 import * as nodeRequest from "request";
 import { initNodeRequest } from "./comms/connection";
@@ -12,3 +17,7 @@ if (typeof btoa === "undefined") {
 }
 
 export * from "./index-common";
+
+//  Client Tools  ---
+export { locateAllClientTools, locateClientTools, IECLError } from "./clienttools/eclcc";
+export { attachWorkspace, qualifiedIDBoundary, ECLScope } from "./clienttools/eclMeta";
