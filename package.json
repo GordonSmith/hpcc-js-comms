@@ -1,6 +1,6 @@
 {
     "name": "@hpcc-js/comms",
-    "version": "0.0.23",
+    "version": "0.0.28",
     "description": "hpcc-js-comms - HPCC Platform Comms Library",
     "main": "lib/comms.js",
     "module": "lib/index",
