@@ -50,4 +50,24 @@ describe("Workunit", function () {
             });
         });
     });
+    describe.only("Readme quick start", function () {
+        it.only("Basic", function () {
+            return Workunit.create(ESP_URL).then((wu) => {
+                return wu.update({ QueryText: "'Hello and Welcome!';" });
+            }).then((wu) => {
+                return wu.submit("hthor");
+            }).then((wu) => {
+                return wu.watchUntilComplete();
+            }).then((wu) => {
+                return wu.fetchResults().then((results) => {
+                    return results[0].fetchResult();
+                }).then((rows) => {
+                    console.log(JSON.stringify(rows));
+                    return wu;
+                });
+            }).then((wu) => {
+                return wu.delete();
+            });
+        });
+    });
 });

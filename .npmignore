@@ -1,5 +1,4 @@
 .vscode
-dist-test
 test
 *.yml
 ts*.*

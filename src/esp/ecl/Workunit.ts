@@ -210,7 +210,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
         this._monitorTickCount = 0;
     }
 
-    update(request: Partial<WsWorkunits.WUUpdateRequest>, appData?: any, debugData?: any) {
+    update(request: Partial<WsWorkunits.WUUpdateRequest>, appData?: any, debugData?: any): Promise<Workunit> {
         return this.connection.WUUpdate({
             ...request, ...{
                 Wuid: this.Wuid,
