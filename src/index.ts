@@ -1,3 +1,5 @@
+export const version = "0.0.1";
+
 export { JSONPTransport, XHRGetTransport, XHRPostTransport, createTransport, setTransportFactory } from "./comms/index";
 
 export { Service as WsWorkunits, WUAction } from "./esp/services/WsWorkunits";
@@ -14,5 +16,3 @@ export { XGMMLGraph, GraphItem } from "./esp/ecl/Graph";
 
 export { IObserverHandle } from "./util/observer";
 export { espTime2Seconds } from "./util/esp";
-
-export const commsMsg = "Hello and Welcome no xmldom";

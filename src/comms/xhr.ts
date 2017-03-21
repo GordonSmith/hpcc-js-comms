@@ -99,6 +99,7 @@ export class XHRTransport extends Transport implements ITransport {
                     .header("X-Requested-With", "XMLHttpRequest")
                     .header("Content-Type", "application/x-www-form-urlencoded")
                     .header("Origin", null)
+                    ;
             }
             xhr
                 .send(this.verb, options.body, (err, req) => {
