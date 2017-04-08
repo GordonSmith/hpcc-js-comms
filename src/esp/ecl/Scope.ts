@@ -1,8 +1,13 @@
+import { utcFormat, utcParse } from "d3-time-format";
 import { StateObject } from "../../collections/stateful";
 import { IConnection, IOptions } from "../../comms/connection";
 import { Service, WUDetails } from "../services/WsWorkunits";
 
+const formatter = utcFormat("%Y-%m-%dT%H:%M:%S.%LZ");
+const parser = utcParse("%Y-%m-%dT%H:%M:%S.%LZ");
+
 export interface AttributeEx extends WUDetails.Attribute {
+    FormattedEnd?: string;
 }
 
 export class Attribute extends StateObject<AttributeEx, AttributeEx> implements AttributeEx {
@@ -13,6 +18,7 @@ export class Attribute extends StateObject<AttributeEx, AttributeEx> implements 
     get Name(): string { return this.get("Name"); }
     get RawValue(): string { return this.get("RawValue"); }
     get Formatted(): string { return this.get("Formatted"); }
+    get FormattedEnd(): string { return this.get("FormattedEnd"); }
     get Measure(): string { return this.get("Measure"); }
     get Creator(): string { return this.get("Creator"); }
     get CreatorType(): string { return this.get("CreatorType"); }
@@ -45,9 +51,32 @@ export class Scope extends StateObject<ScopeEx, ScopeEx> implements ScopeEx {
     get ScopeType(): string { return this.get("ScopeType"); }
     get Attributes(): WUDetails.Attributes { return this.get("Attributes", { Attribute: [] }); }
     get CAttributes(): Attribute[] {
-        return this.Attributes.Attribute.map((scopeAttr) => {
-            return new Attribute(this.connection, this, scopeAttr);
+        //  Match "started" and time elapsed
+        const retVal = [];
+        const timeElapsed = {
+            start: null,
+            elapsed: null
+        }
+        this.Attributes.Attribute.forEach((scopeAttr) => {
+            if (scopeAttr.Name === "TimeElapsed") {
+                timeElapsed.elapsed = scopeAttr;
+            } else if (scopeAttr.Measure === "ts" && scopeAttr.Name.indexOf("Started") >= 0) {
+                timeElapsed.start = scopeAttr;
+            } else {
+                retVal.push(new Attribute(this.connection, this, scopeAttr));
+            }
         });
+        if (timeElapsed.start && timeElapsed.elapsed) {
+            const endTime = parser(timeElapsed.start.Formatted);
+            endTime.setMilliseconds(endTime.getMilliseconds() + timeElapsed.elapsed.RawValue / 1000000);
+            timeElapsed.start.FormattedEnd = formatter(endTime);
+            retVal.push(new Attribute(this.connection, this, timeElapsed.start));
+        } else if (timeElapsed.start) {
+            retVal.push(new Attribute(this.connection, this, timeElapsed.start));
+        } else if (timeElapsed.elapsed) {
+            retVal.push(new Attribute(this.connection, this, timeElapsed.elapsed));
+        }
+        return retVal;
     }
 
     constructor(optsConnection: IOptions | IConnection | Service, wuid: string, scope: WUDetails.Scope) {

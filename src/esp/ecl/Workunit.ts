@@ -479,9 +479,9 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
                     retVal.push(scope);
                 }
             }
-            retVal.sort((a, b) => {
-                if (a.start < b.start) return 1;
-                if (a.start > b.start) return -1;
+            retVal.sort((l, r) => {
+                if (l.start < r.start) return -1;
+                if (l.start > r.start) return 1;
                 return 0;
             });
             return retVal;
