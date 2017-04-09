@@ -12,7 +12,7 @@ export interface AttributeEx extends WUDetails.Attribute {
 
 export class Attribute extends StateObject<AttributeEx, AttributeEx> implements AttributeEx {
     protected connection: Service;
-    protected scope: Scope;
+    readonly scope: Scope;
 
     get properties(): AttributeEx { return this.get(); }
     get Name(): string { return this.get("Name"); }
