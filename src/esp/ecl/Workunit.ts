@@ -10,7 +10,7 @@ import { ESPExceptions } from "../comms/connection";
 import { ActiveWorkunit } from "../services/WsSMC";
 import * as WsTopology from "../services/WsTopology";
 import * as WsWorkunits from "../services/WsWorkunits";
-import { createXGMMLGraph, Graph, GraphCache, IECLDefintion, XGMMLGraph } from "./Graph";
+import { createXGMMLGraph, createGraph, Graph, GraphCache, IECLDefintion, XGMMLGraph } from "./Graph";
 import { Resource } from "./Resource";
 import { Result, ResultCache } from "./Result";
 import { Scope } from "./Scope";
@@ -401,6 +401,12 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
     fetchResults(): Promise<Result[]> {
         return this.WUInfo({ IncludeResults: true }).then(() => {
             return this.CResults;
+        });
+    }
+
+    fetchGraphs(): Promise<any> {
+        return this.fetchDetailsHierarchy({ Filter: { ScopeTypes: ["graph", "subgraph", "activity", "edge"] }, AttributeToReturn: { AttributesXXX: [] } }).then(scopes => {
+            return scopes.map(scope => createGraph(scope));
         });
     }
 

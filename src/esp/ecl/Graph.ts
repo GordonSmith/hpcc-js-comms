@@ -1,8 +1,10 @@
 import { Cache } from "../../collections/cache";
+import { Stack } from "../../collections/stack";
 import { StateObject } from "../../collections/stateful";
 import { IConnection, IOptions } from "../../comms/connection";
 import { PrimativeValueMap, XMLNode } from "../../util/SAXParser";
 import { ECLGraph, Service } from "../services/WsWorkunits";
+import { Scope } from "./Scope";
 import { Timer } from "./Timer";
 
 export interface ECLGraphEx extends ECLGraph {
@@ -101,7 +103,7 @@ export class Subgraph extends GraphItem {
     edges: Edge[] = [];
     edgesMap: { [key: string]: Edge } = {};
 
-    constructor(parent: Subgraph, id: string, attrs: PrimativeValueMap) {
+    constructor(parent: Subgraph, id: string, attrs: PrimativeValueMap = {}) {
         super(parent, id, attrs);
         if (parent) {  //  Only needed for root node
             parent.addSubgraph(this);
@@ -161,7 +163,7 @@ export class Vertex extends GraphItem {
     inEdges: Edge[] = [];
     outEdges: Edge[] = [];
 
-    constructor(parent: Subgraph, id: string, label: string, attrs: PrimativeValueMap) {
+    constructor(parent: Subgraph, id: string, label: string, attrs?: PrimativeValueMap) {
         super(parent, id, attrs);
         this.label = label;
         parent.addVertex(this);
@@ -217,7 +219,7 @@ export class Edge extends Subgraph {
     targetID: string;
     target: Vertex;
 
-    constructor(parent: Subgraph, id: string, sourceID: string, targetID: string, attrs: PrimativeValueMap) {
+    constructor(parent: Subgraph, id: string, sourceID: string, targetID: string, attrs?: PrimativeValueMap) {
         super(parent, id, attrs);
         this.sourceID = sourceID;
         this.targetID = targetID;
@@ -289,5 +291,55 @@ export function createXGMMLGraph(id: string, graphs: XMLNode): XGMMLGraph {
             } catch (e) { }
         }
     }
+    return graph;
+}
+
+interface edgeRef {
+    subgraph: Subgraph;
+    edge: Scope;
+}
+
+export function createGraph(scope: Scope): XGMMLGraph {
+    const graph = new XGMMLGraph(scope.Id);
+    const stack: Stack<Subgraph> = new Stack<Subgraph>();
+    stack.push(graph);
+    const edges: edgeRef[] = [];
+    scope.walk({
+        start: (scope): boolean => {
+            console.log(scope.Id);
+            switch (scope.ScopeType) {
+                case "subgraph":
+                    stack.push(new Subgraph(stack.top(), scope.Id))
+                    break;
+                case "activity":
+                    new Vertex(stack.top(), scope.Id, scope.Id);
+                    break;
+                case "edge":
+                    edges.push({ subgraph: stack.top(), edge: scope });
+                    break;
+                default:
+            }
+            return false;
+        },
+        end: (scope): boolean => {
+            switch (scope.ScopeType) {
+                case "subgraph":
+                    stack.pop();
+                    break;
+                default:
+            }
+            return false;
+        }
+    });
+    edges.forEach(edgeRef => {
+        const source = edgeRef.edge.attr("Source").Formatted;
+        const target = edgeRef.edge.attr("Target").Formatted;
+        if (source && target) {
+            new Edge(edgeRef.subgraph, edgeRef.edge.Id, "a" + source, "a" + target);
+        } else {
+            console.log(`Bad edge:  ${edgeRef.edge.Id}`);
+        }
+    });
+
     return graph;
 }

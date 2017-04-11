@@ -39,6 +39,11 @@ export interface ScopeEx extends WUDetails.Scope {
     Wuid: string;
 }
 
+export interface IScopeVisitor {
+    start(scope: Scope): boolean;
+    end(scope: Scope): boolean;
+}
+
 export class Scope extends StateObject<ScopeEx, ScopeEx> implements ScopeEx {
     protected connection: Service;
     protected _attributeMap: { [key: string]: Attribute } = {};
@@ -120,12 +125,29 @@ export class Scope extends StateObject<ScopeEx, ScopeEx> implements ScopeEx {
         return this;
     }
 
+    walk(visitor: IScopeVisitor): boolean {
+        if (visitor.start(this)) return true;
+        for (const scope of this.children()) {
+            if (scope.walk(visitor)) {
+                return true;
+            }
+        }
+        return visitor.end(this);
+    }
+
     hasAttr(name: string): boolean {
         return this._attributeMap[name] !== undefined;
     }
 
     attr(name: string): Attribute {
-        return this._attributeMap[name];
+        return this._attributeMap[name] || new Attribute(this.connection, this, {
+            Creator: "",
+            CreatorType: "",
+            Formatted: "",
+            Measure: "",
+            Name: "",
+            RawValue: ""
+        });
     }
 
     attrMeasure(name: string): string {
