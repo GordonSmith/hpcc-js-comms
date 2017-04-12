@@ -57,11 +57,11 @@ export class Scope extends StateObject<ScopeEx, ScopeEx> implements ScopeEx {
     get Attributes(): WUDetails.Attributes { return this.get("Attributes", { Attribute: [] }); }
     get CAttributes(): Attribute[] {
         //  Match "started" and time elapsed
-        const retVal = [];
-        const timeElapsed = {
+        const retVal: Attribute[] = [];
+        const timeElapsed: { start: AttributeEx | null, elapsed: AttributeEx | null } = {
             start: null,
             elapsed: null
-        }
+        };
         this.Attributes.Attribute.forEach((scopeAttr) => {
             if (scopeAttr.Name === "TimeElapsed") {
                 timeElapsed.elapsed = scopeAttr;

@@ -1,4 +1,6 @@
 import "./collections/cache";
+import "./collections/dictionary";
+import "./collections/graph";
 import "./collections/stack";
 import "./collections/stateful";
 

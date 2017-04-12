@@ -1,11 +1,10 @@
 import { Stack } from "../collections/stack";
 // import { DOMParser } from "../platform/node";
 
-export type PrimativeValue = any;
-export type PrimativeValueMap = { [key: string]: PrimativeValue };
+export type StringAnyMap = { [key: string]: any };
 export class XMLNode {
     name: string = "";
-    attributes: PrimativeValueMap = {};
+    attributes: StringAnyMap = {};
     children: XMLNode[] = [];
     content: string = "";
 

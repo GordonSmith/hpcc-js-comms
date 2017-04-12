@@ -14,7 +14,7 @@ describe.skip("Readme quick start", function () {
             });
         }).then((wu) => {
             return wu.delete();
-        }).catch((e) => {
+        }).catch((_e) => {
             //  Recover
         });
     });

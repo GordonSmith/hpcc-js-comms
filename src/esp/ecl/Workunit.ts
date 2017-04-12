@@ -1,16 +1,17 @@
 import { utcFormat, utcParse } from "d3-time-format";
 import { Cache } from "../../collections/cache";
+import { Graph as GraphCollection, IECLDefintion } from "../../collections/graph";
 import { IEvent, StateCallback, StateEvents, StateObject, StatePropCallback } from "../../collections/stateful";
 import { IConnection, IOptions } from "../../comms/connection";
 import { logger } from "../../util/Logging";
 import { deepMixinT } from "../../util/object";
 import { IObserverHandle } from "../../util/observer";
-import { PrimativeValueMap, XMLNode } from "../../util/SAXParser";
+import { StringAnyMap, XMLNode } from "../../util/SAXParser";
 import { ESPExceptions } from "../comms/connection";
 import { ActiveWorkunit } from "../services/WsSMC";
 import * as WsTopology from "../services/WsTopology";
 import * as WsWorkunits from "../services/WsWorkunits";
-import { createXGMMLGraph, createGraph, Graph, GraphCache, IECLDefintion, XGMMLGraph } from "./Graph";
+import { createGraph, createXGMMLGraph, Graph, GraphCache } from "./Graph";
 import { Resource } from "./Resource";
 import { Result, ResultCache } from "./Result";
 import { Scope } from "./Scope";
@@ -405,8 +406,8 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
     }
 
     fetchGraphs(): Promise<any> {
-        return this.fetchDetailsHierarchy({ Filter: { ScopeTypes: ["graph", "subgraph", "activity", "edge"] }, AttributeToReturn: { AttributesXXX: [] } }).then(scopes => {
-            return scopes.map(scope => createGraph(scope));
+        return this.fetchDetailsHierarchy({ Filter: { ScopeTypes: ["graph", "subgraph", "activity", "edge"] } }).then((scopes) => {
+            return scopes.map((scope) => createGraph(scope));
         });
     }
 
@@ -784,7 +785,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
         });
     }
 
-    protected debugBreakpointResponseParser(rootNode: PrimativeValueMap) {
+    protected debugBreakpointResponseParser(rootNode: StringAnyMap) {
         return rootNode.children.map((childNode: any) => {
             if (childNode.name === "break") {
                 return childNode.attributes;
@@ -808,7 +809,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
         });
     }
 
-    debugGraph(): Promise<XGMMLGraph> {
+    debugGraph(): Promise<GraphCollection> {
         if (this._debugAllGraph && this.DebugState["_prevGraphSequenceNum"] === this.DebugState["graphSequenceNum"]) {
             return Promise.resolve(this._debugAllGraph);
         }
@@ -825,14 +826,14 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
         });
     }
 
-    debugPrint(edgeID: string, startRow: number = 0, numRows: number = 10): Promise<PrimativeValueMap[]> {
+    debugPrint(edgeID: string, startRow: number = 0, numRows: number = 10): Promise<StringAnyMap[]> {
         return this.debug("print", {
             edgeID,
             startRow,
             numRows
         }).then((response: XMLNode) => {
             return response.children.map((rowNode) => {
-                const retVal: PrimativeValueMap = {};
+                const retVal: StringAnyMap = {};
                 rowNode.children.forEach((cellNode) => {
                     retVal[cellNode.name] = cellNode.content;
                 });

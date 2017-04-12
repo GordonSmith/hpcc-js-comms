@@ -16,7 +16,6 @@ export { Result } from "./esp/ecl/Result";
 export { SourceFile } from "./esp/ecl/SourceFile";
 export { Resource } from "./esp/ecl/Resource";
 export { Timer } from "./esp/ecl/Timer";
-export { WUGraph, GraphItem } from "./esp/ecl/Graph";
 
 //  Utils  - Should be its own package?
 export { IObserverHandle } from "./util/observer";

@@ -1,8 +1,9 @@
 import { Cache } from "../../collections/cache";
+import { Graph as Digraph, ISubgraph } from "../../collections/graph";
 import { Stack } from "../../collections/stack";
 import { StateObject } from "../../collections/stateful";
 import { IConnection, IOptions } from "../../comms/connection";
-import { PrimativeValueMap, XMLNode } from "../../util/SAXParser";
+import { StringAnyMap, XMLNode } from "../../util/SAXParser";
 import { ECLGraph, Service } from "../services/WsWorkunits";
 import { Scope } from "./Scope";
 import { Timer } from "./Timer";
@@ -50,191 +51,7 @@ export class GraphCache extends Cache<ECLGraph, Graph> {
     }
 }
 
-//  XGMML Graph ---
-
-const ATTR_DEFINITION = "definition";
-
-export interface IECLDefintion {
-    id: string;
-    file: string;
-    line: number;
-    column: number;
-}
-
-export class GraphItem {
-    parent: Subgraph;
-    id: string;
-    attrs: PrimativeValueMap;
-    constructor(parent: Subgraph, id: string, attrs: PrimativeValueMap) {
-        this.parent = parent;
-        this.id = id;
-        this.attrs = attrs;
-    }
-
-    className(): "XGMMLGraph" | "Subgraph" | "Vertex" | "Edge" {
-        return (<any>this.constructor).name;
-    }
-
-    hasECLDefinition(): boolean {
-        return this.attrs[ATTR_DEFINITION] !== undefined;
-    }
-
-    getECLDefinition(): IECLDefintion {
-        const match = /([a-z]:\\(?:[-\w\.\d]+\\)*(?:[-\w\.\d]+)?|(?:\/[\w\.\-]+)+)\((\d*),(\d*)\)/.exec(this.attrs[ATTR_DEFINITION]);
-        if (match) {
-            const [, _file, _row, _col] = match;
-            _file.replace("/./", "/");
-            return {
-                id: this.id,
-                file: _file,
-                line: +_row,
-                column: +_col
-            };
-        }
-        throw `Bad definition:  ${this.attrs[ATTR_DEFINITION]}`;
-    }
-}
-
-export class Subgraph extends GraphItem {
-    subgraphs: Subgraph[] = [];
-    subgraphsMap: { [key: string]: Subgraph } = {};
-    vertices: Vertex[] = [];
-    verticesMap: { [key: string]: Vertex } = {};
-    edges: Edge[] = [];
-    edgesMap: { [key: string]: Edge } = {};
-
-    constructor(parent: Subgraph, id: string, attrs: PrimativeValueMap = {}) {
-        super(parent, id, attrs);
-        if (parent) {  //  Only needed for root node
-            parent.addSubgraph(this);
-        }
-    }
-
-    addSubgraph(subgraph: Subgraph) {
-        if (this.subgraphsMap[subgraph.id] !== undefined) {
-            throw "Subgraph already exists";
-        }
-        this.subgraphsMap[subgraph.id] = subgraph;
-        this.subgraphs.push(subgraph);
-    }
-
-    addVertex(vertex: Vertex) {
-        if (this.verticesMap[vertex.id] !== undefined) {
-            throw "Vertex already exists";
-        }
-        this.verticesMap[vertex.id] = vertex;
-        this.vertices.push(vertex);
-    }
-
-    addEdge(edge: Edge) {
-        if (this.edgesMap[edge.id] !== undefined) {
-            throw "Edge already exists";
-        }
-        this.edgesMap[edge.id] = edge;
-        this.edges.push(edge);
-    }
-
-    getNearestDefinition(backwards: boolean = true): IECLDefintion {
-        if (this.hasECLDefinition()) {
-            return this.getECLDefinition();
-        }
-        if (backwards) {
-            for (let i = this.vertices.length - 1; i >= 0; --i) {
-                const vertex = this.vertices[i];
-                if (vertex.hasECLDefinition()) {
-                    return vertex.getECLDefinition();
-                }
-            }
-        }
-        let retVal: IECLDefintion;
-        this.vertices.some((vertex) => {
-            retVal = vertex.getNearestDefinition();
-            if (retVal) {
-                return true;
-            }
-            return false;
-        });
-        return retVal;
-    }
-}
-
-export class Vertex extends GraphItem {
-    label: string;
-    inEdges: Edge[] = [];
-    outEdges: Edge[] = [];
-
-    constructor(parent: Subgraph, id: string, label: string, attrs?: PrimativeValueMap) {
-        super(parent, id, attrs);
-        this.label = label;
-        parent.addVertex(this);
-    }
-
-    getNearestDefinition(): IECLDefintion {
-        if (this.hasECLDefinition()) {
-            return this.getECLDefinition();
-        }
-        let retVal: IECLDefintion;
-        this.inEdges.some((edge) => {
-            retVal = edge.getNearestDefinition();
-            if (retVal) {
-                return true;
-            }
-            return false;
-        });
-        return retVal;
-    }
-}
-
-export class XGMMLGraph extends Subgraph {
-    allSubgraphs: { [key: string]: Subgraph } = {};
-    allVertices: { [key: string]: Vertex } = {};
-    allEdges: { [key: string]: Edge } = {};
-
-    constructor(id: string) {
-        super(null, id, {});
-    }
-
-    breakpointLocations(path?: string): IECLDefintion[] {
-        const retVal: IECLDefintion[] = [];
-        for (const key in this.allVertices) {
-            if (this.allVertices.hasOwnProperty(key)) {
-                const vertex = this.allVertices[key];
-                if (vertex.hasECLDefinition()) {
-                    const definition = vertex.getECLDefinition();
-                    if (definition && !path || path === definition.file) {
-                        retVal.push(definition);
-                    }
-                }
-            }
-        }
-        return retVal.sort((l, r) => {
-            return l.line - r.line;
-        });
-    }
-}
-
-export class Edge extends Subgraph {
-    sourceID: string;
-    source: Vertex;
-    targetID: string;
-    target: Vertex;
-
-    constructor(parent: Subgraph, id: string, sourceID: string, targetID: string, attrs?: PrimativeValueMap) {
-        super(parent, id, attrs);
-        this.sourceID = sourceID;
-        this.targetID = targetID;
-        parent.addEdge(this);
-    }
-
-    getNearestDefinition(): IECLDefintion {
-        if (this.hasECLDefinition()) {
-            return this.getECLDefinition();
-        }
-        return this.source.getNearestDefinition();
-    }
-}
-
-type Callback = (tag: string, attributes: PrimativeValueMap, children: XMLNode[], _stack: XMLNode[]) => void;
+type Callback = (tag: string, attributes: StringAnyMap, children: XMLNode[], _stack: XMLNode[]) => void;
 function walkXmlJson(node: XMLNode, callback: Callback, stack?: XMLNode[]) {
     stack = stack || [];
     stack.push(node);
@@ -245,8 +62,8 @@ function walkXmlJson(node: XMLNode, callback: Callback, stack?: XMLNode[]) {
     stack.pop();
 }
 
-function flattenAtt(nodes: XMLNode[]): PrimativeValueMap {
-    const retVal: PrimativeValueMap = {};
+function flattenAtt(nodes: XMLNode[]): StringAnyMap {
+    const retVal: StringAnyMap = {};
     nodes.forEach((node: XMLNode) => {
         if (node.name === "att") {
             retVal[node.attributes["name"]] = node.attributes["value"];
@@ -255,53 +72,39 @@ function flattenAtt(nodes: XMLNode[]): PrimativeValueMap {
     return retVal;
 }
 
-export function createXGMMLGraph(id: string, graphs: XMLNode): XGMMLGraph {
-    const graph = new XGMMLGraph(id);
-    const stack: Subgraph[] = [graph];
-    walkXmlJson(graphs, (tag: string, attributes: PrimativeValueMap, children: XMLNode[], _stack) => {
+export function createXGMMLGraph(id: string, graphs: XMLNode): Digraph {
+    const graph = new Digraph(id);
+    const stack: ISubgraph[] = [graph];
+    walkXmlJson(graphs, (tag: string, attributes: StringAnyMap, children: XMLNode[], _stack) => {
         const top = stack[stack.length - 1];
         switch (tag) {
             case "graph":
                 break;
             case "node":
                 if (children.length && children[0].children.length && children[0].children[0].name === "graph") {
-                    const subgraph = new Subgraph(top, `graph${attributes["id"]}`, flattenAtt(children));
-                    graph.allSubgraphs[subgraph.id] = subgraph;
+                    const subgraph = graph.createSubgraph(top, `graph${attributes["id"]}`, flattenAtt(children));
                     stack.push(subgraph);
                 } else {
-                    const vertex = new Vertex(top, attributes["id"], attributes["label"], flattenAtt(children));
-                    graph.allVertices[vertex.id] = vertex;
+                    graph.createVertex(top, attributes["id"], attributes["label"], flattenAtt(children));
                 }
                 break;
             case "edge":
-                const edge = new Edge(top, attributes["id"], attributes["source"], attributes["target"], flattenAtt(children));
-                graph.allEdges[edge.id] = edge;
+                graph.createEdge(top, attributes["id"], attributes["source"], attributes["target"], flattenAtt(children));
                 break;
             default:
         }
     });
-    for (const key in graph.allEdges) {
-        if (graph.allEdges.hasOwnProperty(key)) {
-            const edge = graph.allEdges[key];
-            try {
-                edge.source = graph.allVertices[edge.sourceID];
-                edge.target = graph.allVertices[edge.targetID];
-                edge.source.outEdges.push(edge);
-                edge.target.inEdges.push(edge);
-            } catch (e) { }
-        }
-    }
     return graph;
 }
 
 interface edgeRef {
-    subgraph: Subgraph;
+    subgraph: ISubgraph;
     edge: Scope;
 }
 
-export function createGraph(scope: Scope): XGMMLGraph {
-    const graph = new XGMMLGraph(scope.Id);
-    const stack: Stack<Subgraph> = new Stack<Subgraph>();
+export function createGraph(scope: Scope): Digraph {
+    const graph = new Digraph(scope.Id);
+    const stack: Stack<ISubgraph> = new Stack<ISubgraph>();
     stack.push(graph);
     const edges: edgeRef[] = [];
     scope.walk({
@@ -309,10 +112,10 @@ export function createGraph(scope: Scope): XGMMLGraph {
             console.log(scope.Id);
             switch (scope.ScopeType) {
                 case "subgraph":
-                    stack.push(new Subgraph(stack.top(), scope.Id))
+                    stack.push(graph.createSubgraph(stack.top(), scope.Id))
                     break;
                 case "activity":
-                    new Vertex(stack.top(), scope.Id, scope.Id);
+                    graph.createVertex(stack.top(), scope.Id, scope.Id);
                     break;
                 case "edge":
                     edges.push({ subgraph: stack.top(), edge: scope });
@@ -335,7 +138,11 @@ export function createGraph(scope: Scope): XGMMLGraph {
         const source = edgeRef.edge.attr("Source").Formatted;
         const target = edgeRef.edge.attr("Target").Formatted;
         if (source && target) {
-            new Edge(edgeRef.subgraph, edgeRef.edge.Id, "a" + source, "a" + target);
+            try {
+                graph.createEdge(edgeRef.subgraph, edgeRef.edge.Id, "a" + source, "a" + target);
+            } catch (e) {
+
+            }
         } else {
             console.log(`Bad edge:  ${edgeRef.edge.Id}`);
         }
