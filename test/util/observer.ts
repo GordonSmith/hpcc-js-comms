@@ -5,7 +5,7 @@ import { Observable } from "../../src/util/observer";
 describe("observer", function () {
     it("reference counter", function () {
         function echoEvent() {
-            // console.log(JSON.stringify(args));
+            // logger.debug(args);
         }
         const et = new Observable("aaa", "bbb", "zzz");
         expect(et.hasObserver()).is.false;

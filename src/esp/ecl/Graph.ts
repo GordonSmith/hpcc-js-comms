@@ -2,21 +2,20 @@ import { Cache } from "../../collections/cache";
 import { Graph as Digraph, ISubgraph } from "../../collections/graph";
 import { Stack } from "../../collections/stack";
 import { StateObject } from "../../collections/stateful";
-import { IConnection, IOptions } from "../../comms/connection";
+import { logger } from "../../util/Logging";
 import { StringAnyMap, XMLNode } from "../../util/SAXParser";
-import { ECLGraph, Service } from "../services/WsWorkunits";
+import { ECLGraph } from "../services/WsWorkunits";
 import { Scope } from "./Scope";
 import { Timer } from "./Timer";
+import { Workunit } from "./Workunit";
 
 export interface ECLGraphEx extends ECLGraph {
-    Wuid: string;
     Time: number;
 }
 export class Graph extends StateObject<ECLGraphEx, ECLGraphEx> implements ECLGraphEx {
-    protected connection: Service;
+    protected wu: Workunit;
 
     get properties(): ECLGraphEx { return this.get(); }
-    get Wuid(): string { return this.get("Wuid"); }
     get Name(): string { return this.get("Name"); }
     get Label(): string { return this.get("Label"); }
     get Type(): string { return this.get("Type"); }
@@ -25,13 +24,9 @@ export class Graph extends StateObject<ECLGraphEx, ECLGraphEx> implements ECLGra
     get WhenFinished(): Date { return this.get("WhenFinished"); }
     get Time(): number { return this.get("Time"); }
 
-    constructor(optsConnection: IOptions | IConnection | Service, wuid: string, eclGraph: ECLGraph, eclTimers: Timer[]) {
+    constructor(wu: Workunit, eclGraph: ECLGraph, eclTimers: Timer[]) {
         super();
-        if (optsConnection instanceof Service) {
-            this.connection = optsConnection;
-        } else {
-            this.connection = new Service(optsConnection);
-        }
+        this.wu = wu;
         let duration = 0;
         for (const eclTimer of eclTimers) {
             if (eclTimer.GraphName === eclGraph.Name && !eclTimer.HasSubGraphId) {
@@ -39,7 +34,14 @@ export class Graph extends StateObject<ECLGraphEx, ECLGraphEx> implements ECLGra
                 break;
             }
         }
-        this.set({ Wuid: wuid, Time: duration, ...eclGraph });
+        this.set({ Time: duration, ...eclGraph });
+    }
+
+    fetchDetails(): Promise<Digraph> {
+        return this.wu.fetchDetailsHierarchy({ Filter: { Scopes: [this.Name], ScopeTypes: ["graph", "subgraph", "activity", "edge"] } }).then((scopes) => {
+            const retVal = scopes.map((scope) => createGraph(scope));
+            return retVal[0];
+        });
     }
 }
 
@@ -74,6 +76,7 @@ function flattenAtt(nodes: XMLNode[]): StringAnyMap {
 
 export function createXGMMLGraph(id: string, graphs: XMLNode): Digraph {
     const graph = new Digraph(id);
+
     const stack: ISubgraph[] = [graph];
     walkXmlJson(graphs, (tag: string, attributes: StringAnyMap, children: XMLNode[], _stack) => {
         const top = stack[stack.length - 1];
@@ -97,35 +100,35 @@ export function createXGMMLGraph(id: string, graphs: XMLNode): Digraph {
     return graph;
 }
 
-interface edgeRef {
+interface IEdgeRef {
     subgraph: ISubgraph;
     edge: Scope;
 }
 
-export function createGraph(scope: Scope): Digraph {
+function createGraph(scope: Scope): Digraph {
     const graph = new Digraph(scope.Id);
     const stack: Stack<ISubgraph> = new Stack<ISubgraph>();
     stack.push(graph);
-    const edges: edgeRef[] = [];
+    const edges: IEdgeRef[] = [];
     scope.walk({
-        start: (scope): boolean => {
-            console.log(scope.Id);
-            switch (scope.ScopeType) {
+        start: (scope2): boolean => {
+            logger.debug(scope2.Id);
+            switch (scope2.ScopeType) {
                 case "subgraph":
-                    stack.push(graph.createSubgraph(stack.top(), scope.Id))
+                    stack.push(graph.createSubgraph(stack.top(), scope2.Id));
                     break;
                 case "activity":
-                    graph.createVertex(stack.top(), scope.Id, scope.Id);
+                    graph.createVertex(stack.top(), scope2.Id, scope2.Id);
                     break;
                 case "edge":
-                    edges.push({ subgraph: stack.top(), edge: scope });
+                    edges.push({ subgraph: stack.top(), edge: scope2 });
                     break;
                 default:
             }
             return false;
         },
-        end: (scope): boolean => {
-            switch (scope.ScopeType) {
+        end: (scope2): boolean => {
+            switch (scope2.ScopeType) {
                 case "subgraph":
                     stack.pop();
                     break;
@@ -144,7 +147,7 @@ export function createGraph(scope: Scope): Digraph {
 
             }
         } else {
-            console.log(`Bad edge:  ${edgeRef.edge.Id}`);
+            logger.debug(`Bad edge:  ${edgeRef.edge.Id}`);
         }
     });
 

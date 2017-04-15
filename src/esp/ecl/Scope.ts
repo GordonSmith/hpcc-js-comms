@@ -1,7 +1,7 @@
 import { utcFormat, utcParse } from "d3-time-format";
 import { StateObject } from "../../collections/stateful";
-import { IConnection, IOptions } from "../../comms/connection";
-import { Service, WUDetails } from "../services/WsWorkunits";
+import { WUDetails } from "../services/WsWorkunits";
+import { Workunit } from "./Workunit";
 
 const formatter = utcFormat("%Y-%m-%dT%H:%M:%S.%LZ");
 const parser = utcParse("%Y-%m-%dT%H:%M:%S.%LZ");
@@ -11,7 +11,6 @@ export interface AttributeEx extends WUDetails.Attribute {
 }
 
 export class Attribute extends StateObject<AttributeEx, AttributeEx> implements AttributeEx {
-    protected connection: Service;
     readonly scope: Scope;
 
     get properties(): AttributeEx { return this.get(); }
@@ -23,20 +22,14 @@ export class Attribute extends StateObject<AttributeEx, AttributeEx> implements 
     get Creator(): string { return this.get("Creator"); }
     get CreatorType(): string { return this.get("CreatorType"); }
 
-    constructor(optsConnection: IOptions | IConnection | Service, scope: Scope, attribute: WUDetails.Attribute) {
+    constructor(scope: Scope, attribute: WUDetails.Attribute) {
         super();
-        if (optsConnection instanceof Service) {
-            this.connection = optsConnection;
-        } else {
-            this.connection = new Service(optsConnection);
-        }
         this.scope = scope;
         this.set(attribute);
     }
 }
 
 export interface ScopeEx extends WUDetails.Scope {
-    Wuid: string;
 }
 
 export interface IScopeVisitor {
@@ -45,12 +38,11 @@ export interface IScopeVisitor {
 }
 
 export class Scope extends StateObject<ScopeEx, ScopeEx> implements ScopeEx {
-    protected connection: Service;
+    readonly wu: Workunit;
     protected _attributeMap: { [key: string]: Attribute } = {};
     protected _children: Scope[] = [];
 
     get properties(): ScopeEx { return this.get(); }
-    get Wuid(): string { return this.get("Wuid"); }
     get Scope(): string { return this.get("Scope"); }
     get Id(): string { return this.get("Id"); }
     get ScopeType(): string { return this.get("ScopeType"); }
@@ -68,38 +60,30 @@ export class Scope extends StateObject<ScopeEx, ScopeEx> implements ScopeEx {
             } else if (scopeAttr.Measure === "ts" && scopeAttr.Name.indexOf("Started") >= 0) {
                 timeElapsed.start = scopeAttr;
             } else {
-                retVal.push(new Attribute(this.connection, this, scopeAttr));
+                retVal.push(new Attribute(this, scopeAttr));
             }
         });
         if (timeElapsed.start && timeElapsed.elapsed) {
             const endTime = parser(timeElapsed.start.Formatted);
             endTime.setMilliseconds(endTime.getMilliseconds() + timeElapsed.elapsed.RawValue / 1000000);
             timeElapsed.start.FormattedEnd = formatter(endTime);
-            retVal.push(new Attribute(this.connection, this, timeElapsed.start));
+            retVal.push(new Attribute(this, timeElapsed.start));
         } else if (timeElapsed.start) {
-            retVal.push(new Attribute(this.connection, this, timeElapsed.start));
+            retVal.push(new Attribute(this, timeElapsed.start));
         } else if (timeElapsed.elapsed) {
-            retVal.push(new Attribute(this.connection, this, timeElapsed.elapsed));
+            retVal.push(new Attribute(this, timeElapsed.elapsed));
         }
         return retVal;
     }
 
-    constructor(optsConnection: IOptions | IConnection | Service, wuid: string, scope: WUDetails.Scope) {
+    constructor(wu: Workunit, scope: WUDetails.Scope) {
         super();
-        if (optsConnection instanceof Service) {
-            this.connection = optsConnection;
-        } else {
-            this.connection = new Service(optsConnection);
-        }
-        this.set("Wuid", wuid);
+        this.wu = wu;
         this.update(scope);
     }
 
     update(scope: WUDetails.Scope) {
-        this.set({
-            Wuid: this.Wuid,
-            ...scope
-        });
+        this.set(scope);
         this.CAttributes.forEach((attr) => {
             this._attributeMap[attr.Name] = attr;
         });
@@ -140,7 +124,7 @@ export class Scope extends StateObject<ScopeEx, ScopeEx> implements ScopeEx {
     }
 
     attr(name: string): Attribute {
-        return this._attributeMap[name] || new Attribute(this.connection, this, {
+        return this._attributeMap[name] || new Attribute(this, {
             Creator: "",
             CreatorType: "",
             Formatted: "",

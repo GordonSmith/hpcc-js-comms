@@ -1,34 +1,27 @@
 import { StateObject } from "../../collections/stateful";
-import { IConnection, IOptions } from "../../comms/connection";
-import { Service } from "../services/WsWorkunits";
+import { Workunit } from "./Workunit";
 
 export interface ResourceEx {
-    Wuid: string;
     URL: string;
     DisplayName: string;
     DisplayPath: string;
 }
 
 export class Resource extends StateObject<ResourceEx, ResourceEx> implements ResourceEx {
-    protected connection: Service;
+    protected wu: Workunit;
 
     get properties(): ResourceEx { return this.get(); }
-    get Wuid(): string { return this.get("Wuid"); }
     get URL(): string { return this.get("URL"); }
     get DisplayName(): string { return this.get("DisplayName"); }
     get DisplayPath(): string { return this.get("DisplayPath"); }
 
-    constructor(optsConnection: IOptions | IConnection | Service, wuid: string, url: string) {
+    constructor(wu: Workunit, url: string) {
         super();
-        if (optsConnection instanceof Service) {
-            this.connection = optsConnection;
-        } else {
-            this.connection = new Service(optsConnection);
-        }
+        this.wu = wu;
 
         const cleanedURL = url.split("\\").join("/");
         const urlParts = cleanedURL.split("/");
-        const matchStr = "res/" + wuid + "/";
+        const matchStr = "res/" + this.wu.Wuid + "/";
         let displayPath = "";
         let displayName = "";
 
@@ -38,7 +31,6 @@ export class Resource extends StateObject<ResourceEx, ResourceEx> implements Res
         }
 
         this.set({
-            Wuid: wuid,
             URL: url,
             DisplayName: displayName,
             DisplayPath: displayPath

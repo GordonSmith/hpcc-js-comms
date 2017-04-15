@@ -9,16 +9,16 @@ describe("StateObject", function () {
     }
     const stateObj: any = new StateObject<ITest, ITest>();
     stateObj.on("changed", () => {
-        // console.log(`changed:  ${JSON.stringify(changes)}`);
+        // logger.debug(`changed:  ${JSON.stringify(changes)}`);
     });
     stateObj.addObserver("changed", () => {
-        // console.log(`changed:  ${JSON.stringify(changes)}`);
+        // logger.debug(`changed:  ${JSON.stringify(changes)}`);
     });
     stateObj.on("propChanged", "bbb", () => {
-        // console.log(`changed:  ${JSON.stringify(changes)}`);
+        // logger.debug(`changed:  ${JSON.stringify(changes)}`);
     });
     stateObj.addObserver("propChanged", "bbb", () => {
-        // console.log(`changed:  ${JSON.stringify(changes)}`);
+        // logger.debug(`changed:  ${JSON.stringify(changes)}`);
     });
     it("basic", function () {
         expect(stateObj.has("aaa")).to.be.false;

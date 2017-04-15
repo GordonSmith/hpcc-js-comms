@@ -11,7 +11,7 @@ import { ESPExceptions } from "../comms/connection";
 import { ActiveWorkunit } from "../services/WsSMC";
 import * as WsTopology from "../services/WsTopology";
 import * as WsWorkunits from "../services/WsWorkunits";
-import { createGraph, createXGMMLGraph, Graph, GraphCache } from "./Graph";
+import { createXGMMLGraph, Graph, GraphCache } from "./Graph";
 import { Resource } from "./Resource";
 import { Result, ResultCache } from "./Result";
 import { Scope } from "./Scope";
@@ -111,7 +111,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
     get CGraphs(): Graph[] {
         return this.Graphs.ECLGraph.map((eclGraph) => {
             return this._graphCache.get(eclGraph, () => {
-                return new Graph(this.connection, this.Wuid, eclGraph, this.CTimers);
+                return new Graph(this, eclGraph, this.CTimers);
             });
         });
     }
@@ -120,7 +120,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
     get ResourceURLs(): WsWorkunits.ResourceURLs { return this.get("ResourceURLs", { URL: [] }); }
     get CResourceURLs(): Resource[] {
         return this.ResourceURLs.URL.map((url) => {
-            return new Resource(this.connection, this.Wuid, url);
+            return new Resource(this, url);
         });
     }
     get TotalClusterTime(): string { return this.get("TotalClusterTime", ""); }
@@ -405,16 +405,16 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
         });
     }
 
-    fetchGraphs(): Promise<any> {
-        return this.fetchDetailsHierarchy({ Filter: { ScopeTypes: ["graph", "subgraph", "activity", "edge"] } }).then((scopes) => {
-            return scopes.map((scope) => createGraph(scope));
+    fetchGraphs(): Promise<Graph[]> {
+        return this.WUInfo({ IncludeGraphs: true }).then(() => {
+            return this.CGraphs;
         });
     }
 
     fetchDetails(request: Partial<WsWorkunits.WUDetails.Request> = {}): Promise<Scope[]> {
         return this.WUDetails(request).then((response) => {
             return response.Scopes.Scope.map((rawScope) => {
-                return new Scope(this.connection, this.Wuid, rawScope);
+                return new Scope(this, rawScope);
             });
         });
     }
@@ -430,7 +430,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
                     scopeMap[rawScope.Scope].update(rawScope);
                     return null;
                 } else {
-                    const scope = new Scope(this.connection, this.Wuid, rawScope);
+                    const scope = new Scope(this, rawScope);
                     scopeMap[scope.Scope] = scope;
                     return scope;
                 }
@@ -694,9 +694,12 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
                 IncludeMeasure: true,
                 IncludeRawValue: true
             }
-
         }, request, { WUID: this.Wuid })).then((response) => {
-            return response;
+            return deepMixinT<WsWorkunits.WUDetails.Response>({
+                Scopes: {
+                    Scope: []
+                }
+            }, response);
         });
     }
 

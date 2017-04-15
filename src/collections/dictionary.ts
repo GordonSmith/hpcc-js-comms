@@ -11,7 +11,7 @@ export class Dictionary<T> {
         return this.store[key];
     }
 
-    exists(key: string) {
+    has(key: string) {
         return this.store[key] !== undefined;
     }
 

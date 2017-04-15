@@ -1,11 +1,10 @@
 import { expect } from "chai";
 
 import { Workunit } from "../../../src/esp/ecl/Workunit";
+import { logger } from "../../../src/util/Logging";
 import { ESP_URL, isTravis } from "../../testLib";
 
-const WUID = "W20170405-055340";
-
-// tslint:disable:no-console
+const WUID = "W20170413-093947";
 
 describe("Workunit", function () {
     this.timeout(5000);
@@ -83,7 +82,7 @@ describe("Workunit", function () {
                 }).then((scopes) => {
                     scopes.forEach((scope) => {
                         scope.CAttributes.forEach((_attr) => {
-                            // console.log(`${scope.Wuid}:${scope.Scope} (${scope.ScopeType}) -> ${JSON.stringify(_attr.properties)}`);
+                            // logger.debug(`${scope.Wuid}:${scope.Scope} (${scope.ScopeType}) -> ${JSON.stringify(_attr.properties)}`);
                         });
                     });
                 });
@@ -100,7 +99,7 @@ describe("Workunit", function () {
                     scopes.forEach((scope) => {
                         expect(scope.hasAttr("WhenGraphStarted")).to.be.true;
                         scope.CAttributes.forEach((_attr) => {
-                            console.log(`${scope.Wuid}:${scope.Scope} (${scope.ScopeType}) -> ${JSON.stringify(_attr.properties)}`);
+                            logger.debug(`${scope.wu.Wuid}:${scope.Scope} (${scope.ScopeType}) -> ${JSON.stringify(_attr.properties)}`);
                         });
                     });
                 });
@@ -149,7 +148,7 @@ describe("Workunit", function () {
                     scopes.forEach((scope) => {
                         expect(scope.Scope).to.equal("workunit");
                         scope.CAttributes.forEach((_attr) => {
-                            console.log(`${scope.Wuid}:${scope.Scope} (${scope.ScopeType}) -> ${JSON.stringify(_attr.properties)}`);
+                            logger.debug(`${scope.wu.Wuid}:${scope.Scope} (${scope.ScopeType}) -> ${JSON.stringify(_attr.properties)}`);
                         });
                     });
                 });
@@ -165,7 +164,7 @@ describe("Workunit", function () {
                 return wu.fetchResults().then((results) => {
                     return results[0].fetchRows();
                 }).then((rows) => {
-                    console.log(JSON.stringify(rows));
+                    logger.debug(rows);
                     return wu;
                 });
             }).then((wu) => {
@@ -176,7 +175,7 @@ describe("Workunit", function () {
         it("query", function () {
             return Workunit.query({ baseUrl: ESP_URL, userID: "userID", password: "pw" }, { State: "completed", LastNDays: 7, Count: 3 }).then((wus) => {
                 wus.forEach((wu) => {
-                    console.log(`${wu.Wuid} Total Cluster Time:  ${wu.TotalClusterTime}`);
+                    logger.debug(`${wu.Wuid} Total Cluster Time:  ${wu.TotalClusterTime}`);
                 });
             });
         });
@@ -188,13 +187,13 @@ describe("Workunit", function () {
                     return wu.watchUntilComplete()
                         .then(() => {
                             return wu.fetchResults().then((results) => {
-                                return results[0].fetchRows();
+                                return results[0].fetchRows(0, 100);
                             }).then((rows) => {
-                                console.log(JSON.stringify(rows));
+                                logger.debug(rows);
                             });
                         });
                 }).catch((e) => {
-                    console.log(JSON.stringify(e));
+                    logger.debug(e);
                 });
         });
     });

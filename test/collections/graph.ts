@@ -2,7 +2,7 @@ import { expect } from "chai";
 
 import { Graph } from "../../src/collections/graph";
 
-describe.only("Graph", function () {
+describe("Graph", function () {
     it("subgraph hierarchy", function () {
         const graph = new Graph("graph1");
         const sg1 = graph.createSubgraph(graph, "sg1");

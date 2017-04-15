@@ -221,11 +221,11 @@ export class Connection implements IConnection {
                     respondedTimeout -= respondedTick;
                     if (respondedTimeout <= 0) {
                         clearInterval(progress);
-                        // console.log("Request timeout:  " + script.src);
+                        // logger.debug("Request timeout:  " + script.src);
                         doCallback();
                         reject(Error("Request timeout:  " + script.src));
                     } else {
-                        // console.log("Request pending (" + respondedTimeout / 1000 + " sec):  " + script.src);
+                        // logger.debug("Request pending (" + respondedTimeout / 1000 + " sec):  " + script.src);
                     }
                 }
             }, respondedTick);
