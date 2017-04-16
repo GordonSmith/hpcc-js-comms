@@ -5,17 +5,17 @@ import * as connecton from "./comms/connection";
 export const Connecton = connecton;
 
 //  Raw Services  ---
-export { Service as WsWorkunits, WUAction } from "./esp/services/WsWorkunits";
-export { Service as WsTopology } from "./esp/services/WsTopology";
-export { Service as WsSMC } from "./esp/services/WsSMC";
-export { Service as WsDFU } from "./esp/services/WsDFU";
+export { Service as WsWorkunits, WUAction } from "./esp/services/wsWorkunits";
+export { Service as WsTopology } from "./esp/services/wsTopology";
+export { Service as WsSMC } from "./esp/services/wsSMC";
+export { Service as WsDFU } from "./esp/services/wsDFU";
 
 //  OO Wrappers  ---
-export { Workunit } from "./esp/ecl/Workunit";
-export { Result } from "./esp/ecl/Result";
-export { SourceFile } from "./esp/ecl/SourceFile";
-export { Resource } from "./esp/ecl/Resource";
-export { Timer } from "./esp/ecl/Timer";
+export { Workunit } from "./esp/ecl/workunit";
+export { Result } from "./esp/ecl/result";
+export { SourceFile } from "./esp/ecl/sourceFile";
+export { Resource } from "./esp/ecl/resource";
+export { Timer } from "./esp/ecl/timer";
 
 //  Utils  - Should be its own package?
 export { IObserverHandle } from "./util/observer";

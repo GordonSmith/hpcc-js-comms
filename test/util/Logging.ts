@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import { logger } from "../../src/util/Logging";
+import { logger } from "../../src/util/logging";
 
 describe("Logging", function () {
     it("unitTest", function () {

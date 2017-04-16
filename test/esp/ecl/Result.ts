@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import { Result } from "../../../src/esp/ecl/Result";
+import { Result } from "../../../src/esp/ecl/result";
 
 describe("Result", function () {
     it("basic", function () {

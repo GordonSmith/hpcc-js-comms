@@ -1,5 +1,5 @@
-import { Workunit } from "../src/esp/ecl/Workunit";
-import { logger } from "../src/util/Logging";
+import { Workunit } from "../src/esp/ecl/workunit";
+import { logger } from "../src/util/logging";
 
 describe.skip("Readme quick start", function () {
     it("Quick Submit", function () {

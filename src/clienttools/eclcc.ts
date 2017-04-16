@@ -6,9 +6,9 @@ import * as semver from "semver";
 import * as tmp from "tmp";
 import * as xml2js from "xml2js";
 
-import { logger } from "../util/Logging";
+import { logger } from "../util/logging";
 import { exists } from "../util/object";
-import { attachWorkspace } from "./ECLMeta";
+import { attachWorkspace } from "./eclMeta";
 
 const exeExt = os.type() === "Windows_NT" ? ".exe" : "";
 

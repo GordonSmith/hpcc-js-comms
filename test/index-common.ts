@@ -7,22 +7,22 @@ import "./collections/stateful";
 import "./comms/connection";
 
 import "./esp/comms/connection";
-import "./esp/ecl/Graph";
-import "./esp/ecl/Resource";
-import "./esp/ecl/Result";
-import "./esp/ecl/SourceFile";
-import "./esp/ecl/Workunit";
-import "./esp/services/WsDFU";
-import "./esp/services/WsTopology";
-import "./esp/services/WsWorkunits";
+import "./esp/ecl/graph";
+import "./esp/ecl/resource";
+import "./esp/ecl/result";
+import "./esp/ecl/sourceFile";
+import "./esp/ec./workunit";
+import "./esp/service./wsDFU";
+import "./esp/service./wsTopology";
+import "./esp/service./wsWorkunits";
 
 import "./google/maps";
 
 import "./util/esp";
-import "./util/Logging";
+import "./util/logging";
 import "./util/object";
 import "./util/observer";
-import "./util/SAXParser";
+import "./util/sAXParser";
 import "./util/string";
 
 import "./demo";

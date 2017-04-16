@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
-import { Workunit } from "../../../src/esp/ecl/Workunit";
-import { logger } from "../../../src/util/Logging";
+import { Workunit } from "../../../src/esp/ecl/workunit";
+import { logger } from "../../../src/util/logging";
 import { ESP_URL, isTravis } from "../../testLib";
 
 const WUID = "W20170413-093947";

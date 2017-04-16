@@ -3,7 +3,7 @@ import * as xml2js from "xml2js";
 
 import { Dictionary } from "../collections/dictionary";
 import { find } from "../util/array";
-import { logger } from "../util/Logging";
+import { logger } from "../util/logging";
 
 const _inspect = false;
 function inspect(obj: any, _id: string, known: any) {

@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
 import { ClientTools, locateClientTools } from "../../src/clienttools/eclcc";
-import { logger } from "../../src/util/Logging";
+import { logger } from "../../src/util/logging";
 
 describe.only("eclcc", function () {
     logger.debug(process.cwd());

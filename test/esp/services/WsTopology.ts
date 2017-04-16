@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import { Service } from "../../../src/esp/services/WsTopology";
+import { Service } from "../../../src/esp/services/wsTopology";
 import { ESP_URL } from "../../testLib";
 
 describe("WsTopology", function () {

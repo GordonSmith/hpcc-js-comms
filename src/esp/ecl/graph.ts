@@ -2,12 +2,12 @@ import { Cache } from "../../collections/cache";
 import { Graph as Digraph, ISubgraph } from "../../collections/graph";
 import { Stack } from "../../collections/stack";
 import { StateObject } from "../../collections/stateful";
-import { logger } from "../../util/Logging";
-import { StringAnyMap, XMLNode } from "../../util/SAXParser";
-import { ECLGraph } from "../services/WsWorkunits";
-import { Scope } from "./Scope";
-import { Timer } from "./Timer";
-import { Workunit } from "./Workunit";
+import { logger } from "../../util/logging";
+import { StringAnyMap, XMLNode } from "../../util/sAXParser";
+import { ECLGraph } from "../services/wsWorkunits";
+import { Scope } from "./scope";
+import { Timer } from "./timer";
+import { Workunit } from "./workunit";
 
 export interface ECLGraphEx extends ECLGraph {
     Time: number;

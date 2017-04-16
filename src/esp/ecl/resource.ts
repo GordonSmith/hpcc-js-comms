@@ -1,5 +1,5 @@
 import { StateObject } from "../../collections/stateful";
-import { Workunit } from "./Workunit";
+import { Workunit } from "./workunit";
 
 export interface ResourceEx {
     URL: string;

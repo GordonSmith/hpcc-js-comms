@@ -1,6 +1,6 @@
 import { IConnection, IOptions, ResponseType } from "../../comms/connection";
 import { deepMixin } from "../../util/object";
-import { xml2json, XMLNode } from "../../util/SAXParser";
+import { xml2json, XMLNode } from "../../util/sAXParser";
 import { ESPConnection } from "../comms/connection";
 
 export enum WUStateID {

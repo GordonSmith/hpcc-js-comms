@@ -1,4 +1,4 @@
-import { StringAnyMap } from "../util/SAXParser";
+import { StringAnyMap } from "../util/sAXParser";
 import { Dictionary } from "./dictionary";
 
 const ATTR_DEFINITION = "definition";

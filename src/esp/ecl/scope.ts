@@ -1,7 +1,7 @@
 import { utcFormat, utcParse } from "d3-time-format";
 import { StateObject } from "../../collections/stateful";
-import { WUDetails } from "../services/WsWorkunits";
-import { Workunit } from "./Workunit";
+import { WUDetails } from "../services/wsWorkunits";
+import { Workunit } from "./workunit";
 
 const formatter = utcFormat("%Y-%m-%dT%H:%M:%S.%LZ");
 const parser = utcParse("%Y-%m-%dT%H:%M:%S.%LZ");

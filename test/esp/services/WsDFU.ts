@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import { Service } from "../../../src/esp/services/WsDFU";
+import { Service } from "../../../src/esp/services/wsDFU";
 import { ESP_URL } from "../../testLib";
 
 describe("WsDFU", function () {

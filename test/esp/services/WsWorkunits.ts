@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
 import { Connection, RequestType } from "../../../src/comms/connection";
-import { ECLWorkunit, Service as WsWorkunits } from "../../../src/esp/services/WsWorkunits";
+import { ECLWorkunit, Service as WsWorkunits } from "../../../src/esp/services/wsWorkunits";
 import { ESP_URL, isBrowser, isTravis } from "../../testLib";
 
 describe("WsWorkunits", function () {

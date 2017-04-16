@@ -1,7 +1,7 @@
 import { StateObject } from "../../collections/stateful";
 import { IConnection, IOptions } from "../../comms/connection";
 import { espTime2Seconds } from "../../util/esp";
-import { ECLTimer, Service } from "../services/WsWorkunits";
+import { ECLTimer, Service } from "../services/wsWorkunits";
 
 export interface ECLTimerEx extends ECLTimer {
     Wuid: string;

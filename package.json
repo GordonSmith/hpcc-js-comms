@@ -45,6 +45,7 @@
     "@types/semver": "~5.3.31",
     "@types/tmp": "~0.0.32",
     "@types/xml2js": "~0.0.33",
+    "@types/node": "~6.0.68",
     "chai": "~3.5.0",
     "gulp": "~3.9.1",
     "gulp-bump": "~2.7.0",
@@ -67,7 +68,7 @@
     "rollup-plugin-uglify": "~1.0.1",
     "rollup-watch": "~3.2.2",
     "run-sequence": "~1.2.2",
-    "tslint": "~4.4.2",
+    "tslint": "~5.1.0",
     "typedoc": "~0.5.7",
     "typescript": "~2.2.2",
     "yargs": "~7.0.2"

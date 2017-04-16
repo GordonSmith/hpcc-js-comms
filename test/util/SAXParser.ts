@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import { parseXSD } from "../../src/util/SAXParser";
+import { parseXSD } from "../../src/util/sAXParser";
 
 describe("SAXParser", function () {
     it("basic", function () {

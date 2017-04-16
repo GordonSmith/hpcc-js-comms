@@ -1,6 +1,6 @@
 import { StateObject } from "../../collections/stateful";
 import { IConnection, IOptions } from "../../comms/connection";
-import { ECLSourceFile, Service, } from "../services/WsWorkunits";
+import { ECLSourceFile, Service, } from "../services/wsWorkunits";
 
 export interface ECLSourceFileEx extends ECLSourceFile {
     Wuid: string;
