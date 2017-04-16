@@ -2,7 +2,6 @@ import { expect } from "chai";
 
 import { ClientTools, locateClientTools } from "../../src/clienttools/eclcc";
 import { logger } from "../../src/util/Logging";
-import { ESP_URL, isTravis } from "../testLib";
 
 describe.only("eclcc", function () {
     logger.debug(process.cwd());
