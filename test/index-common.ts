@@ -11,10 +11,10 @@ import "./esp/ecl/graph";
 import "./esp/ecl/resource";
 import "./esp/ecl/result";
 import "./esp/ecl/sourceFile";
-import "./esp/ec./workunit";
-import "./esp/service./wsDFU";
-import "./esp/service./wsTopology";
-import "./esp/service./wsWorkunits";
+import "./esp/ecl/workunit";
+import "./esp/services/wsDFU";
+import "./esp/services/wsTopology";
+import "./esp/services/wsWorkunits";
 
 import "./google/maps";
 
