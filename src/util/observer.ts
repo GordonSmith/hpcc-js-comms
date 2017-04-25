@@ -6,12 +6,14 @@ export interface IObserverHandle {
     unwatch(): void;
 }
 
+export type CallbackFunction = (...args: any[]) => void;
+
 class ObserverHandle<T extends string> implements IObserverHandle {
     private eventTarget: Observable<T>;
     private eventID: T;
-    private callback: Function;
+    private callback: CallbackFunction;
 
-    constructor(eventTarget: Observable<T>, eventID: T, callback: Function) {
+    constructor(eventTarget: Observable<T>, eventID: T, callback: CallbackFunction) {
         this.eventTarget = eventTarget;
         this.eventID = eventID;
         this.callback = callback;
@@ -29,14 +31,14 @@ class ObserverHandle<T extends string> implements IObserverHandle {
 export type EventID = string;
 export class Observable<T extends EventID> {
     private _knownEvents: EventID[];
-    private _eventObservers: { [eventID: string]: Function[] } = {};
+    private _eventObservers: { [eventID: string]: CallbackFunction[] } = {};
 
     constructor(...events: T[]) {
         this._knownEvents = events;
     }
 
-    addObserver(eventID: T, callback: Function): IObserverHandle {
-        let eventObservers = this._eventObservers[eventID];
+    addObserver(eventID: T, callback: CallbackFunction): IObserverHandle {
+        let eventObservers: CallbackFunction[] = this._eventObservers[eventID];
         if (!eventObservers) {
             eventObservers = [];
             this._eventObservers[eventID] = eventObservers;
@@ -45,7 +47,7 @@ export class Observable<T extends EventID> {
         return new ObserverHandle<T>(this, eventID, callback);
     }
 
-    removeObserver(eventID: T, callback: Function): this {
+    removeObserver(eventID: T, callback: CallbackFunction): this {
         const eventObservers = this._eventObservers[eventID];
         if (eventObservers) {
             for (let i = eventObservers.length - 1; i >= 0; --i) {

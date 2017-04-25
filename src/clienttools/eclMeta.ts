@@ -1,9 +1,9 @@
 import * as path from "path";
-import * as xml2js from "xml2js";
 
 import { Dictionary } from "../collections/dictionary";
 import { find } from "../util/array";
 import { logger } from "../util/logging";
+import { xml2json } from "../util/saxParser";
 
 const _inspect = false;
 function inspect(obj: any, _id: string, known: any) {
@@ -217,12 +217,10 @@ export class Workspace {
 
     parseMetaXML(metaXML: string) {
         const retVal: any[] = [];
-        const parser = new xml2js.Parser();
-        parser.parseString(metaXML, (_err: any, result: any) => {
-            if (result && result.Meta && result.Meta.Source) {
-                this.parseSources(result.Meta.Source);
-            }
-        });
+        const result: any = xml2json(metaXML);
+        if (result && result.Meta && result.Meta.Source) {
+            this.parseSources(result.Meta.Source);
+        }
         return retVal;
     }
 

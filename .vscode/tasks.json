@@ -24,7 +24,7 @@
             "args": [
                 "-w",
                 "-p",
-                "./tsconfig.json"
+                "./tsconfig-common.json"
             ],
             "showOutput": "silent",
             "isBackground": true,

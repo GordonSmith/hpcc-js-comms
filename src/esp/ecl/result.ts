@@ -2,7 +2,7 @@ import { Cache } from "../../collections/cache";
 import { StateObject } from "../../collections/stateful";
 import { IConnection, IOptions } from "../../comms/connection";
 import { exists } from "../../util/object";
-import { parseXSD, XSDSchema } from "../../util/sAXParser";
+import { parseXSD, XSDSchema } from "../../util/saxParser";
 import { DFULogicalFile } from "../services/wsDFU";
 import { ECLResult, ECLSchemas, Service, WUResultRequest, WUResultResponse } from "../services/wsWorkunits";
 
@@ -69,7 +69,7 @@ export class Result extends StateObject<ECLResultEx & DFULogicalFile, ECLResultE
     }
 
     protected WUResult(start: number = 0, count: number = 1, suppressXmlSchema: boolean = false): Promise<WUResultResponse> {
-        const request: WUResultRequest = <WUResultRequest>{};
+        const request: WUResultRequest = {} as WUResultRequest;
         if (this.Wuid && this.Sequence !== undefined) {
             request.Wuid = this.Wuid;
             request.Sequence = this.Sequence;

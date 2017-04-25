@@ -4,10 +4,10 @@ import * as os from "os";
 import * as path from "path";
 import * as semver from "semver";
 import * as tmp from "tmp";
-import * as xml2js from "xml2js";
 
 import { logger } from "../util/logging";
 import { exists } from "../util/object";
+import { xml2json } from "../util/saxParser";
 import { attachWorkspace } from "./eclMeta";
 
 const exeExt = os.type() === "Windows_NT" ? ".exe" : "";
@@ -39,7 +39,7 @@ function correctBinname(binname: string) {
 }
 */
 
-export function walkXmlJson(node: any, callback: Function, stack?: any[]) {
+export function walkXmlJson(node: any, callback: (key: string, childNode: any, stack: any[]) => void, stack?: any[]) {
     stack = stack || [];
     stack.push(node);
     for (const key in node) {
@@ -141,7 +141,7 @@ export class ClientTools {
         if (this._version) {
             return Promise.resolve(this._version);
         }
-        return this.execFile(this.eclccPath, this.args(["--version"]), this.binPath, "eclcc", `Cannot find ${this.eclccPath}`).then((response: IExecFile) => {
+        return this.execFile(this.eclccPath, this.binPath, this.args(["--version"]), "eclcc", `Cannot find ${this.eclccPath}`).then((response: IExecFile) => {
             if (response && response.stdout && response.stdout.length) {
                 const versions = response.stdout.split(" ");
                 if (versions.length > 1) {
@@ -171,20 +171,18 @@ export class ClientTools {
     private loadXMLDoc(filePath: any, removeOnRead?: boolean) {
         return new Promise((resolve, _reject) => {
             const fileData = fs.readFileSync(filePath, "ascii");
-            const parser = new xml2js.Parser();
-            parser.parseString(fileData.substring(0, fileData.length), function (_err: any, result: any) {
-                if (removeOnRead) {
-                    fs.unlink(filePath);
-                }
-                resolve(result);
-            });
+            const retVal = xml2json(fileData);
+            if (removeOnRead) {
+                fs.unlink(filePath);
+            }
+            resolve(retVal);
         });
     }
 
-    createWU(filename: string) {
+    createWU(filename: string): Promise<LocalWorkunit> {
         const tmpName = tmp.tmpNameSync({ prefix: "eclcc-wu-tmp", postfix: "" });
         const args = ["-o" + tmpName, "-wu"].concat([filename]);
-        return this.execFile(this.eclccPath, this.args(args), this.cwd, "eclcc", `Cannot find ${this.eclccPath}`).then((_response: IExecFile) => {
+        return this.execFile(this.eclccPath, this.cwd, this.args(args), "eclcc", `Cannot find ${this.eclccPath}`).then((_response: IExecFile) => {
             const xmlPath = path.normalize(tmpName + ".xml");
             const contentPromise = this.exists(xmlPath) ? this.loadXMLDoc(xmlPath, true) : Promise.resolve({});
             return contentPromise.then((content) => {
@@ -208,7 +206,7 @@ export class ClientTools {
 
     createArchive(filename: string): Promise<IArchive> {
         const args = ["-E"].concat([filename]);
-        return this.execFile(this.eclccPath, this.args(args), this.cwd, "eclcc", `Cannot find ${this.eclccPath}`).then((response: IExecFile) => {
+        return this.execFile(this.eclccPath, this.cwd, this.args(args), "eclcc", `Cannot find ${this.eclccPath}`).then((response: IExecFile) => {
             return { content: response.stdout, err: this.parseEclccErrors(response.stderr) };
         });
     }
@@ -231,7 +229,7 @@ export class ClientTools {
 
     syntaxCheck(filePath: string): Promise<IECLError[]> {
         const args = ["-syntax", "-M"].concat([filePath]);
-        return this.execFile(this.eclccPath, this.args(args), this.cwd, "eclcc", `Cannot find ${this.eclccPath}`).then((response: IExecFile) => {
+        return this.execFile(this.eclccPath, this.cwd, this.args(args), "eclcc", `Cannot find ${this.eclccPath}`).then((response: IExecFile) => {
             let retVal: IECLError[] = [];
             if (response) {
                 retVal = this.parseECLErrors(response.stderr);
@@ -244,19 +242,19 @@ export class ClientTools {
         });
     }
 
-    private execFile(cmd: string, args: string[], cwd: string, _toolName: string, _notFoundError?: string) {
+    private execFile(cmd: string, cwd: string, args: string[], _toolName: string, _notFoundError?: string) {
         return new Promise((resolve, _reject) => {
             logger.debug(`${cmd} ${args.join(" ")}`);
             const child = cp.spawn(cmd, args, { cwd });
             let stdOut = "";
             let stdErr = "";
-            child.stdout.on("data", function (data) {
+            child.stdout.on("data", (data) => {
                 stdOut += data.toString();
             });
-            child.stderr.on("data", function (data) {
+            child.stderr.on("data", (data) => {
                 stdErr += data.toString();
             });
-            child.on("close", function (_code, _signal) {
+            child.on("close", (_code, _signal) => {
                 resolve({
                     stdout: stdOut.trim(),
                     stderr: stdErr.trim()
@@ -300,7 +298,7 @@ export function locateAllClientTools() {
                     promiseArray.push(clientTools.version());
                 }
             }
-            fs.readdirSync(hpccSystemsFolder).forEach(function (versionFolder) {
+            fs.readdirSync(hpccSystemsFolder).forEach((versionFolder) => {
                 const eclccPath = path.join(hpccSystemsFolder, versionFolder, "clienttools", "bin", "eclcc" + exeExt);
                 if (fs.existsSync(eclccPath)) {
                     const name = path.basename(versionFolder);
@@ -313,8 +311,8 @@ export function locateAllClientTools() {
             });
         }
     }
-    return Promise.all(promiseArray).then(function () {
-        allClientToolsCache.sort(function (l: ClientTools, r: ClientTools) {
+    return Promise.all(promiseArray).then(() => {
+        allClientToolsCache.sort((l: ClientTools, r: ClientTools) => {
             return semver.compare(r.versionSync(), l.versionSync());
         });
         return allClientToolsCache;
@@ -328,7 +326,7 @@ export function locateClientTools(overridePath: string = "", cwd: string = ".", 
     return locateAllClientTools().then((allClientToolsCache2) => {
         //  TODO find best match  ---
         if (!allClientToolsCache2.length) {
-            throw "Unable to locate ECL CLient Tools.";
+            throw new Error("Unable to locate ECL CLient Tools.");
         }
         return allClientToolsCache2[0].clone(cwd, includeFolders, legacyMode);
     });

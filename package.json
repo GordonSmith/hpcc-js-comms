@@ -4,12 +4,13 @@
   "description": "hpcc-js-comms - HPCC Platform Client Comms Library",
   "main": "dist/comms.js",
   "browser": "dist/comms-browser.js",
-  "module": "lib/index",
-  "jsnext": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "module": "lib/index-node.js",
+  "jsnext": "lib/index-node.js",
+  "types": "lib/index-node.d.ts",
   "files": [
     "dist/**/*.*",
-    "lib/**/*.*"
+    "lib/**/*.*",
+    "src/**/*.*"
   ],
   "scripts": {
     "clean": "gulp clean",
@@ -29,9 +30,7 @@
     "d3-time-format": "~2.0.5",
     "es6-promise": "~4.0.5",
     "request": "~2.81.0",
-    "path": "~0.12.7",
     "tmp": "~0.0.31",
-    "xml2js": "~0.4.17",
     "tslib": "~1.6.0",
     "xmldom": "~0.1.27"
   },
@@ -41,11 +40,9 @@
     "@types/d3-time-format": "~2.0.4",
     "@types/mocha": "~2.2.40",
     "@types/request": "~0.0.41",
-    "@types/xmldom": "~0.1.29",
     "@types/semver": "~5.3.31",
     "@types/tmp": "~0.0.32",
-    "@types/xml2js": "~0.0.33",
-    "@types/node": "~6.0.68",
+    "@types/xmldom": "~0.1.29",
     "chai": "~3.5.0",
     "gulp": "~3.9.1",
     "gulp-bump": "~2.7.0",
@@ -64,11 +61,10 @@
     "rollup-plugin-css-only": "~0.2.0",
     "rollup-plugin-node-resolve": "~2.0.0",
     "rollup-plugin-sourcemaps": "~0.4.1",
-    "rollup-plugin-typescript2": "~0.3.0",
     "rollup-plugin-uglify": "~1.0.1",
     "rollup-watch": "~3.2.2",
     "run-sequence": "~1.2.2",
-    "tslint": "~5.1.0",
+    "tslint": "^5.1.0",
     "typedoc": "~0.5.7",
     "typescript": "~2.2.2",
     "yargs": "~7.0.2"

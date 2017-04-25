@@ -3,7 +3,7 @@ import { Graph as Digraph, ISubgraph } from "../../collections/graph";
 import { Stack } from "../../collections/stack";
 import { StateObject } from "../../collections/stateful";
 import { logger } from "../../util/logging";
-import { StringAnyMap, XMLNode } from "../../util/sAXParser";
+import { StringAnyMap, XMLNode } from "../../util/saxParser";
 import { ECLGraph } from "../services/wsWorkunits";
 import { Scope } from "./scope";
 import { Timer } from "./timer";
@@ -38,7 +38,7 @@ export class Graph extends StateObject<ECLGraphEx, ECLGraphEx> implements ECLGra
     }
 
     fetchDetails(): Promise<Digraph> {
-        return this.wu.fetchDetailsHierarchy({ Filter: { Scopes: [this.Name], ScopeTypes: ["graph", "subgraph", "activity", "edge"] } }).then((scopes) => {
+        return this.wu.fetchDetailsHierarchy({ Filter: { Scopes: [this.Name] }, Nested: { ScopeTypes: ["graph", "subgraph", "activity", "edge"] } }).then((scopes) => {
             const retVal = scopes.map((scope) => createGraph(scope));
             return retVal[0];
         });

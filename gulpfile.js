@@ -46,6 +46,7 @@ gulp.task("clean", [], function () {
     return Promise.all([
         rmdir("dist"),
         rmdir("lib"),
+        rmdir("lib-umd"),
         rmdir("lib-test"),
         rmdir("docx"),
         rmdir("coverage"),
@@ -55,7 +56,7 @@ gulp.task("clean", [], function () {
 
 //  Compile  ---
 gulp.task("compile-src", shell.task([
-    "tsc -p ./tsconfig.json"
+    "tsc -p ./tsconfig-common.json"
 ]));
 
 gulp.task("compile-test", shell.task([
@@ -66,7 +67,7 @@ gulp.task("compile-all", ["compile-src", "compile-test"]);
 
 //  Docs  ---
 gulp.task("docs", shell.task([
-    "typedoc --target es6 --ignoreCompilerErrors --out ./docx/ ./src/index.ts"
+    "typedoc --target es6 --ignoreCompilerErrors --out ./docx/ ./src/index-common.ts"
 ]));
 
 //  Bundle  ---
@@ -130,7 +131,7 @@ gulp.task("build", function (cb) {
 
 //  Watch for browser ---
 gulp.task("compile-src-watch", shell.task([
-    "tsc -w -p ./tsconfig.json"
+    "tsc -w -p ./tsconfig-common.json"
 ]));
 
 gulp.task('watch', function () {
@@ -162,14 +163,14 @@ gulp.task("bump-package", [], function () {
 
 gulp.task("bump", ["bump-package"], function () {
     const npmPackage = require('./package.json');
-    return gulp.src(["./src/index.ts"])
+    return gulp.src(["./src/index-common.ts"])
         .pipe(replace(/export const version = "(.*?)";/, "export const version = \"" + npmPackage.version + "\";"))
         .pipe(gulp.dest("./src/"))
         ;
 });
 
 //  GIT Tagging  ---
-const TAG_FILES = ["./package.json", "./src/index.ts", "./dist", "./lib", "./docx"];
+const TAG_FILES = ["./package.json", "./src/index-common.ts", "./dist", "./lib", "./docx"];
 gulp.task("git-create-branch", function (cb) {
     var version = require("./package.json").version;
     git.checkout("b" + version, { args: "-b" }, cb);

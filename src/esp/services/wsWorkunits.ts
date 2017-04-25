@@ -1,6 +1,6 @@
 import { IConnection, IOptions, ResponseType } from "../../comms/connection";
 import { deepMixin } from "../../util/object";
-import { xml2json, XMLNode } from "../../util/sAXParser";
+import { xml2json, XMLNode } from "../../util/saxParser";
 import { ESPConnection } from "../comms/connection";
 
 export enum WUStateID {
@@ -36,7 +36,7 @@ export enum WUAction {
     Resume,
     Debug,
     __size
-};
+}
 
 export interface Query {
     Text: string;
@@ -150,7 +150,7 @@ export interface ECLWorkunit {
 }
 
 export function isECLWorkunit(_: ECLWorkunit | Workunit): _ is ECLWorkunit {
-    return (<ECLWorkunit>_).TotalClusterTime !== undefined;
+    return (_ as ECLWorkunit).TotalClusterTime !== undefined;
 }
 
 export interface ThorLogInfo {
@@ -229,7 +229,7 @@ export interface Workunit extends ECLWorkunit {
 }
 
 export function isWorkunit(_: ECLWorkunit | Workunit): _ is Workunit {
-    return (<Workunit>_).StateEx !== undefined;
+    return (_ as Workunit).StateEx !== undefined;
 }
 
 export interface WUInfoRequest {
@@ -904,7 +904,7 @@ export class Service {
     }
 
     WUAction(request: WUActionRequest): Promise<WUActionResponse> {
-        (<any>request).ActionType = request.WUActionType; //  v5.x compatibility
+        (request as any).ActionType = request.WUActionType; //  v5.x compatibility
         return this._connection.send("WUAction", request);
     }
 

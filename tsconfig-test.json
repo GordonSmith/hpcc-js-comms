@@ -1,10 +1,13 @@
 {
-    "extends": "./tsconfig.json",
+    "extends": "./tsconfig-common.json",
     "compilerOptions": {
         "outDir": "./lib-test",
-        "module": "commonjs"
+        "module": "commonjs",
+        "jsx": "react",
+        "reactNamespace": "this"
     },
     "include": [
-        "./test"
+        "./test/index-node.ts",
+        "./test/index-browser.ts"
     ]
 }

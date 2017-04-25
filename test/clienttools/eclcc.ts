@@ -42,4 +42,11 @@ describe.only("eclcc", function () {
             return archive;
         });
     });
+    it("createLocalWU", function () {
+        expect(ct).to.exist;
+        return ct.createWU("./test/clienttools/test.ecl").then(wu => {
+            expect(wu).to.exist;
+            return wu;
+        });
+    });
 });

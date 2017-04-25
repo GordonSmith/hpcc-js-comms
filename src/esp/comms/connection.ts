@@ -3,7 +3,7 @@ import { join } from "../../util/url";
 
 export function isArray(arg: any) {
     return Object.prototype.toString.call(arg) === "[object Array]";
-};
+}
 
 export interface Exception {
     Code: number;
@@ -32,7 +32,7 @@ export class ESPExceptions extends Error implements Exceptions {
 }
 
 function isConnection(optsConnection: IOptions | IConnection): optsConnection is IConnection {
-    return (<IConnection>optsConnection).send !== undefined;
+    return (optsConnection as IConnection).send !== undefined;
 }
 
 export class ESPConnection implements IConnection {
@@ -62,7 +62,7 @@ export class ESPConnection implements IConnection {
         return this;
     }
 
-    toESPStringArray(target: any, arrayName: string): Object {
+    toESPStringArray(target: any, arrayName: string): any {
         if (isArray(target[arrayName])) {
             for (let i = 0; i < target[arrayName].length; ++i) {
                 target[arrayName + "_i" + i] = target[arrayName][i];

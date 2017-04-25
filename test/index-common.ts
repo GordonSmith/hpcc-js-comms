@@ -22,7 +22,7 @@ import "./util/esp";
 import "./util/logging";
 import "./util/object";
 import "./util/observer";
-import "./util/sAXParser";
+import "./util/saxParser";
 import "./util/string";
 
 import "./demo";

@@ -1,4 +1,4 @@
-import { StringAnyMap } from "../util/sAXParser";
+import { StringAnyMap } from "../util/saxParser";
 import { Dictionary } from "./dictionary";
 
 const ATTR_DEFINITION = "definition";
@@ -29,7 +29,7 @@ class GraphItem {
     }
 
     className(): "Graph" | "Subgraph" | "Vertex" | "Edge" {
-        return (<any>this.constructor).name;
+        return (this.constructor as any).name;
     }
 
     id(): string {
@@ -52,7 +52,7 @@ class GraphItem {
                 column: +_col
             };
         }
-        throw `Bad definition:  ${this.attrs[ATTR_DEFINITION]}`;
+        throw new Error(`Bad definition:  ${this.attrs[ATTR_DEFINITION]}`);
     }
 }
 
@@ -92,14 +92,14 @@ class Subgraph extends GraphItem implements ISubgraph {
 
     addSubgraph(subgraph: Subgraph) {
         if (this._subgraphs.has(subgraph.id())) {
-            throw "Subgraph already exists";
+            throw new Error("Subgraph already exists");
         }
         this._subgraphs.set(subgraph.id(), subgraph);
     }
 
     removeSubgraph(subgraph: Subgraph) {
         if (!this._subgraphs.has(subgraph.id())) {
-            throw "Subgraph does not exist";
+            throw new Error("Subgraph does not exist");
         }
         this._subgraphs.remove(subgraph.id());
     }
@@ -110,14 +110,14 @@ class Subgraph extends GraphItem implements ISubgraph {
 
     addVertex(vertex: Vertex) {
         if (this._vertices.has(vertex.id())) {
-            throw "Vertex already exists";
+            throw new Error("Vertex already exists");
         }
         this._vertices.set(vertex.id(), vertex);
     }
 
     removeVertex(vertex: Vertex) {
         if (!this._vertices.has(vertex.id())) {
-            throw "Vertex does not exist";
+            throw new Error("Vertex does not exist");
         }
         this._vertices.remove(vertex.id());
     }
@@ -128,14 +128,14 @@ class Subgraph extends GraphItem implements ISubgraph {
 
     addEdge(edge: Edge) {
         if (this._edges.has(edge.id())) {
-            throw "Edge already exists";
+            throw new Error("Edge already exists");
         }
         this._edges.set(edge.id(), edge);
     }
 
     removeEdge(edge: Edge) {
         if (!this._edges.has(edge.id())) {
-            throw "Edge does not exist";
+            throw new Error("Edge does not exist");
         }
         this._edges.remove(edge.id());
     }
@@ -152,15 +152,15 @@ class Subgraph extends GraphItem implements ISubgraph {
 
     subgraphs(): Subgraph[] {
         return this._subgraphs.values();
-    };
+    }
 
     vertices(): Vertex[] {
         return this._vertices.values();
-    };
+    }
 
     edges(): Edge[] {
         return this._edges.values();
-    };
+    }
 
     getNearestDefinition(backwards: boolean = true): IECLDefintion {
         //  Todo - order is incorrect...
@@ -215,7 +215,7 @@ class Vertex extends GraphItem implements IVertex {
     removeInEdge(edge: Edge) {
         const idx = this.inEdges.indexOf(edge);
         if (idx < 0) {
-            throw "In edge does not exist";
+            throw new Error("In edge does not exist");
         }
         this.inEdges.splice(idx, 1);
     }
@@ -227,7 +227,7 @@ class Vertex extends GraphItem implements IVertex {
     removeOutEdge(edge: Edge) {
         const idx = this.outEdges.indexOf(edge);
         if (idx < 0) {
-            throw "Out edge does not exist";
+            throw new Error("Out edge does not exist");
         }
         this.outEdges.splice(idx, 1);
     }
@@ -258,10 +258,10 @@ class Edge extends Subgraph implements IEdge {
     constructor(graph: Graph, parent: Subgraph, id: string, source: Vertex, target: Vertex, attrs?: StringAnyMap) {
         super(graph, parent, id, attrs);
         if (!source) {
-            throw "Missing source vertex";
+            throw new Error("Missing source vertex");
         }
         if (!target) {
-            throw "Missing target vertex";
+            throw new Error("Missing target vertex");
         }
         parent.addEdge(this);
         this.source = source;
@@ -320,7 +320,7 @@ export class Graph implements ISubgraph {
 
     createSubgraph(parent: ISubgraph, id: string, attrs?: StringAnyMap): ISubgraph {
         if (this._allSubgraphs.has(id)) {
-            throw "Subgraph already exists";
+            throw new Error("Subgraph already exists");
         }
         const retVal = new Subgraph(this, this._allSubgraphs.get(parent.id()), id, attrs);
         this._allSubgraphs.set(id, retVal);
@@ -330,7 +330,7 @@ export class Graph implements ISubgraph {
     destroySubgraph(_subgraph: ISubgraph) {
         const subgraph = this._allSubgraphs.get(_subgraph.id());
         if (!subgraph) {
-            throw "Subgraph does not exist";
+            throw new Error("Subgraph does not exist");
         }
         this._allSubgraphs.remove(subgraph.id());
         subgraph.destroy();
@@ -338,7 +338,7 @@ export class Graph implements ISubgraph {
 
     createVertex(parent: ISubgraph, id: string, label: string, attrs?: StringAnyMap): IVertex {
         if (this._allVertices.has(id)) {
-            throw "Vertex already exists";
+            throw new Error("Vertex already exists");
         }
         const retVal = new Vertex(this, this._allSubgraphs.get(parent.id()), id, label, attrs);
         this._allVertices.set(id, retVal);
@@ -348,7 +348,7 @@ export class Graph implements ISubgraph {
     destroyVertex(_vertex: IVertex) {
         const vertex = this._allVertices.get(_vertex.id());
         if (!vertex) {
-            throw "Vertex does not exist";
+            throw new Error("Vertex does not exist");
         }
         this._allVertices.remove(vertex.id());
         vertex.destroy();
@@ -356,7 +356,7 @@ export class Graph implements ISubgraph {
 
     createEdge(parent: ISubgraph, id: string, sourceID: string, targetID: string, attrs?: StringAnyMap): IEdge {
         if (this._allEdges.has(id)) {
-            throw "Edge already exists";
+            throw new Error("Edge already exists");
         }
         const retVal = new Edge(this, this._allSubgraphs.get(parent.id()), id, this._allVertices.get(sourceID), this._allVertices.get(targetID), attrs);
         this._allEdges.set(id, retVal);
@@ -366,7 +366,7 @@ export class Graph implements ISubgraph {
     destroyEdge(_edge: IEdge) {
         const edge = this._allEdges.get(_edge.id());
         if (!edge) {
-            throw "Edge does not exist";
+            throw new Error("Edge does not exist");
         }
         this._allEdges.remove(edge.id());
         edge.destroy();

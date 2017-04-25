@@ -6,7 +6,7 @@ import { IConnection, IOptions } from "../../comms/connection";
 import { logger } from "../../util/logging";
 import { deepMixinT } from "../../util/object";
 import { IObserverHandle } from "../../util/observer";
-import { StringAnyMap, XMLNode } from "../../util/sAXParser";
+import { StringAnyMap, XMLNode } from "../../util/saxParser";
 import { ESPExceptions } from "../comms/connection";
 import { ActiveWorkunit } from "../services/wsSMC";
 import * as WsTopology from "../services/wsTopology";
