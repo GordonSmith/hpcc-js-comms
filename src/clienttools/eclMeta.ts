@@ -3,7 +3,7 @@ import * as path from "path";
 import { Dictionary } from "../collections/dictionary";
 import { find } from "../util/array";
 import { logger } from "../util/logging";
-import { xml2json } from "../util/saxParser";
+import { SAXStackParser, XMLNode } from "../util/saxParser";
 
 const _inspect = false;
 function inspect(obj: any, _id: string, known: any) {
@@ -23,7 +23,7 @@ function inspect(obj: any, _id: string, known: any) {
 export class Attr {
     name: string;
 
-    constructor(xmlAttr: any) {
+    constructor(xmlAttr: XMLNode) {
         this.name = xmlAttr.$.name;
     }
 }
@@ -32,7 +32,7 @@ export class Field {
     name: string;
     type: string;
 
-    constructor(xmlField: any) {
+    constructor(xmlField: XMLNode) {
         this.name = xmlField.$.name;
         this.type = xmlField.$.type;
     }
@@ -61,7 +61,7 @@ export class ECLScope {
     end: number;
     definitions: Definition[];
 
-    constructor(name: string, type: string, sourcePath: string, xmlDefinitions: string[], line: number = 1, start: number = 0, body: number = 0, end: number = Number.MAX_VALUE) {
+    constructor(name: string, type: string, sourcePath: string, xmlDefinitions: XMLNode[], line: number = 1, start: number = 0, body: number = 0, end: number = Number.MAX_VALUE) {
         this.name = name;
         this.type = type;
         this.sourcePath = sourcePath;
@@ -72,7 +72,7 @@ export class ECLScope {
         this.definitions = this.parseDefinitions(xmlDefinitions);
     }
 
-    private parseDefinitions(definitions: string[] = []): Definition[] {
+    private parseDefinitions(definitions: XMLNode[] = []): Definition[] {
         return definitions.map(definition => {
             const retVal = new Definition(this.sourcePath, definition);
             inspect(definition, "definition", retVal);
@@ -130,15 +130,15 @@ export class Definition extends ECLScope {
     attrs?: Attr[];
     fields?: Field[];
 
-    constructor(sourcePath: string, xmlDefinition: any) {
-        super(xmlDefinition.$.name, xmlDefinition.$.type, sourcePath, xmlDefinition.Definition, xmlDefinition.$.line, xmlDefinition.$.start, xmlDefinition.$.body, xmlDefinition.$.end);
+    constructor(sourcePath: string, xmlDefinition: XMLNode) {
+        super(xmlDefinition.$.name, xmlDefinition.$.type, sourcePath, xmlDefinition.children("Definition"), xmlDefinition.$.line, xmlDefinition.$.start, xmlDefinition.$.body, xmlDefinition.$.end);
         this.exported = !!xmlDefinition.$.exported;
         this.shared = !!xmlDefinition.$.shared;
-        this.attrs = this.parseAttrs(xmlDefinition.Attr);
-        this.fields = this.parseFields(xmlDefinition.Field);
+        this.attrs = this.parseAttrs(xmlDefinition.children("Attr"));
+        this.fields = this.parseFields(xmlDefinition.children("Field"));
     }
 
-    private parseAttrs(attrs: any[] = []): Attr[] {
+    private parseAttrs(attrs: XMLNode[] = []): Attr[] {
         return attrs.map(attr => {
             const retVal = new Attr(attr);
             inspect(attr, "attr", retVal);
@@ -146,7 +146,7 @@ export class Definition extends ECLScope {
         });
     }
 
-    private parseFields(fields: any[] = []): Field[] {
+    private parseFields(fields: XMLNode[] = []): Field[] {
         return fields.map(field => {
             const retVal = new Field(field);
             inspect(field, "field", retVal);
@@ -171,7 +171,7 @@ export class Import {
     end: number;
     line: number;
 
-    constructor(xmlImport: any) {
+    constructor(xmlImport: XMLNode) {
         this.name = xmlImport.$.name;
         this.ref = xmlImport.$.ref;
         this.start = xmlImport.$.start;
@@ -183,12 +183,12 @@ export class Import {
 export class Source extends ECLScope {
     imports: Import[];
 
-    constructor(xmlSource: any) {
-        super(xmlSource.$.name, "source", xmlSource.$.sourcePath, xmlSource.Definition);
-        this.imports = this.parseImports(xmlSource.Import);
+    constructor(xmlSource: XMLNode) {
+        super(xmlSource.$.name, "source", xmlSource.$.sourcePath, xmlSource.children("Definition"));
+        this.imports = this.parseImports(xmlSource.children("Import"));
     }
 
-    private parseImports(imports: any[] = []): Import[] {
+    private parseImports(imports: XMLNode[] = []): Import[] {
         return imports.map(imp => {
             const retVal = new Import(imp);
             inspect(imp, "import", retVal);
@@ -206,7 +206,7 @@ export class Workspace {
         this._workspacePath = workspacePath;
     }
 
-    parseSources(sources: string[] = []) {
+    parseSources(sources: XMLNode[] = []) {
         return sources.map(_source => {
             const source = new Source(_source);
             inspect(_source, "source", source);
@@ -215,13 +215,10 @@ export class Workspace {
         });
     }
 
-    parseMetaXML(metaXML: string) {
-        const retVal: any[] = [];
-        const result: any = xml2json(metaXML);
-        if (result && result.Meta && result.Meta.Source) {
-            this.parseSources(result.Meta.Source);
-        }
-        return retVal;
+    parseMetaXML(metaXML: string): void {
+        const metaParser = new MetaParser();
+        metaParser.parse(metaXML);
+        this.parseSources(metaParser.sources);
     }
 
     resolveQualifiedID(filePath: string, qualifiedID: string, charOffset: number): ECLScope {
@@ -294,4 +291,20 @@ export function qualifiedIDBoundary(lineText: string, charPos: number, reverse: 
         charPos += reverse ? -1 : 1;
     }
     return charPos + (reverse ? 1 : -1);
+}
+
+class MetaParser extends SAXStackParser {
+    sources: XMLNode[] = [];
+
+    endXMLNode(node: Node): XMLNode {
+        const e: XMLNode = this.stack.top();
+        switch (e.name) {
+            case "Source":
+                this.sources.push(e);
+                break;
+            default:
+                break;
+        }
+        return super.endXMLNode(node);
+    }
 }

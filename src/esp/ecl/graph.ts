@@ -4,15 +4,16 @@ import { Stack } from "../../collections/stack";
 import { StateObject } from "../../collections/stateful";
 import { logger } from "../../util/logging";
 import { StringAnyMap, XMLNode } from "../../util/saxParser";
-import { ECLGraph } from "../services/wsWorkunits";
+import { IECLGraph } from "../services/wsWorkunits";
 import { Scope } from "./scope";
 import { Timer } from "./timer";
 import { Workunit } from "./workunit";
 
-export interface ECLGraphEx extends ECLGraph {
+export interface ECLGraphEx extends IECLGraph {
     Time: number;
 }
-export class Graph extends StateObject<ECLGraphEx, ECLGraphEx> implements ECLGraphEx {
+
+export class ECLGraph extends StateObject<ECLGraphEx, ECLGraphEx> implements ECLGraphEx {
     protected wu: Workunit;
 
     get properties(): ECLGraphEx { return this.get(); }
@@ -24,7 +25,7 @@ export class Graph extends StateObject<ECLGraphEx, ECLGraphEx> implements ECLGra
     get WhenFinished(): Date { return this.get("WhenFinished"); }
     get Time(): number { return this.get("Time"); }
 
-    constructor(wu: Workunit, eclGraph: ECLGraph, eclTimers: Timer[]) {
+    constructor(wu: Workunit, eclGraph: IECLGraph, eclTimers: Timer[]) {
         super();
         this.wu = wu;
         let duration = 0;
@@ -45,7 +46,7 @@ export class Graph extends StateObject<ECLGraphEx, ECLGraphEx> implements ECLGra
     }
 }
 
-export class GraphCache extends Cache<ECLGraph, Graph> {
+export class GraphCache extends Cache<IECLGraph, ECLGraph> {
     constructor() {
         super((obj) => {
             return Cache.hash([obj.Name]);
@@ -57,8 +58,8 @@ type Callback = (tag: string, attributes: StringAnyMap, children: XMLNode[], _st
 function walkXmlJson(node: XMLNode, callback: Callback, stack?: XMLNode[]) {
     stack = stack || [];
     stack.push(node);
-    callback(node.name, node.attributes, node.children, stack);
-    node.children.forEach((childNode) => {
+    callback(node.name, node.$, node.children(), stack);
+    node.children().forEach((childNode) => {
         walkXmlJson(childNode, callback, stack);
     });
     stack.pop();
@@ -68,7 +69,7 @@ function flattenAtt(nodes: XMLNode[]): StringAnyMap {
     const retVal: StringAnyMap = {};
     nodes.forEach((node: XMLNode) => {
         if (node.name === "att") {
-            retVal[node.attributes["name"]] = node.attributes["value"];
+            retVal[node.$["name"]] = node.$["value"];
         }
     });
     return retVal;

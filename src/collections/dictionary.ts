@@ -1,5 +1,15 @@
+export type StringAnyMap = { [key: string]: any };
+
 export class Dictionary<T> {
     private store: { [key: string]: T } = {};
+
+    constructor(attrs?: StringAnyMap) {
+        if (attrs) {
+            for (const key in attrs) {
+                this.set(key, attrs[key]);
+            }
+        }
+    }
 
     set(key: string, value: T): T {
         const retVal: T = this.store[key];

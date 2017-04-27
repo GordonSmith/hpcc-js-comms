@@ -1,9 +1,9 @@
 import { expect } from "chai";
 
-import { Graph } from "../../../src/esp/ecl/graph";
+import { ECLGraph } from "../../../src/esp/ecl/graph";
 
 describe("Graph", function () {
     it("basic", function () {
-        expect(Graph).to.be.a("function");
+        expect(ECLGraph).to.be.a("function");
     });
 });

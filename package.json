@@ -19,6 +19,7 @@
     "bundle": "gulp bundle-all",
     "build": "gulp build",
     "watch": "gulp watch",
+    "watch-node": "gulp watch-node",
     "lint": "tslint ./src/**/*",
     "unittest": "mocha ./lib-test/test/index-node.js",
     "pretest": "gulp compile-test",

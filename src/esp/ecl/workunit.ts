@@ -1,6 +1,6 @@
 import { utcFormat, utcParse } from "d3-time-format";
 import { Cache } from "../../collections/cache";
-import { Graph as GraphCollection, IECLDefintion } from "../../collections/graph";
+import { Graph, IECLDefintion } from "../../collections/graph";
 import { IEvent, StateCallback, StateEvents, StateObject, StatePropCallback } from "../../collections/stateful";
 import { IConnection, IOptions } from "../../comms/connection";
 import { logger } from "../../util/logging";
@@ -11,7 +11,7 @@ import { ESPExceptions } from "../comms/connection";
 import { ActiveWorkunit } from "../services/wsSMC";
 import * as WsTopology from "../services/wsTopology";
 import * as WsWorkunits from "../services/wsWorkunits";
-import { createXGMMLGraph, Graph, GraphCache } from "./graph";
+import { createXGMMLGraph, ECLGraph, GraphCache } from "./graph";
 import { Resource } from "./resource";
 import { Result, ResultCache } from "./result";
 import { Scope } from "./scope";
@@ -108,10 +108,10 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
     private _graphCache = new GraphCache();
     get GraphCount(): number { return this.get("GraphCount", 0); }
     get Graphs(): WsWorkunits.Graphs { return this.get("Graphs", { ECLGraph: [] }); }
-    get CGraphs(): Graph[] {
+    get CGraphs(): ECLGraph[] {
         return this.Graphs.ECLGraph.map((eclGraph) => {
             return this._graphCache.get(eclGraph, () => {
-                return new Graph(this, eclGraph, this.CTimers);
+                return new ECLGraph(this, eclGraph, this.CTimers);
             });
         });
     }
@@ -405,7 +405,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
         });
     }
 
-    fetchGraphs(): Promise<Graph[]> {
+    fetchGraphs(): Promise<ECLGraph[]> {
         return this.WUInfo({ IncludeGraphs: true }).then(() => {
             return this.CGraphs;
         });
@@ -735,9 +735,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
             return Promise.resolve(new XMLNode(command));
         }
         return this.WUCDebug(command, opts).then((response: XMLNode) => {
-            const retVal: XMLNode[] = response.children.filter((xmlNode) => {
-                return xmlNode.name === command;
-            });
+            const retVal: XMLNode[] = response.children(command);
             if (retVal.length) {
                 return retVal[0];
             }
@@ -754,7 +752,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
             });
         }
         return this.debug("status").then((response) => {
-            const debugState = { ...this.DebugState, ...response.attributes };
+            const debugState = { ...this.DebugState, ...response.$ };
             this.set({
                 DebugState: debugState
             });
@@ -812,7 +810,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
         });
     }
 
-    debugGraph(): Promise<GraphCollection> {
+    debugGraph(): Promise<Graph> {
         if (this._debugAllGraph && this.DebugState["_prevGraphSequenceNum"] === this.DebugState["graphSequenceNum"]) {
             return Promise.resolve(this._debugAllGraph);
         }
@@ -835,9 +833,9 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
             startRow,
             numRows
         }).then((response: XMLNode) => {
-            return response.children.map((rowNode) => {
+            return response.children().map((rowNode) => {
                 const retVal: StringAnyMap = {};
-                rowNode.children.forEach((cellNode) => {
+                rowNode.children().forEach((cellNode) => {
                     retVal[cellNode.name] = cellNode.content;
                 });
                 return retVal;

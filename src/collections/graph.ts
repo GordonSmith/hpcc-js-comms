@@ -1,5 +1,4 @@
-import { StringAnyMap } from "../util/saxParser";
-import { Dictionary } from "./dictionary";
+import { Dictionary, StringAnyMap } from "./dictionary";
 
 const ATTR_DEFINITION = "definition";
 
@@ -13,19 +12,20 @@ export interface IECLDefintion {
 export interface IGraphItem {
     className(): string;
     id(): string;
+    attrs(): Dictionary<any>;
 }
 
 class GraphItem {
     protected graph: Graph;
     protected parent: Subgraph;
     protected readonly _id: string;
-    readonly attrs: StringAnyMap;
+    readonly _attrs: Dictionary<any>;
 
     constructor(graph: Graph, parent: Subgraph, id: string, attrs: StringAnyMap) {
         this.graph = graph;
         this.parent = parent;
         this._id = id;
-        this.attrs = attrs;
+        this._attrs = new Dictionary<any>(attrs);
     }
 
     className(): "Graph" | "Subgraph" | "Vertex" | "Edge" {
@@ -36,12 +36,16 @@ class GraphItem {
         return this._id;
     }
 
+    attrs(): Dictionary<any> {
+        return this._attrs;
+    }
+
     hasECLDefinition(): boolean {
-        return this.attrs[ATTR_DEFINITION] !== undefined;
+        return this._attrs[ATTR_DEFINITION] !== undefined;
     }
 
     getECLDefinition(): IECLDefintion {
-        const match = /([a-z]:\\(?:[-\w\.\d]+\\)*(?:[-\w\.\d]+)?|(?:\/[\w\.\-]+)+)\((\d*),(\d*)\)/.exec(this.attrs[ATTR_DEFINITION]);
+        const match = /([a-z]:\\(?:[-\w\.\d]+\\)*(?:[-\w\.\d]+)?|(?:\/[\w\.\-]+)+)\((\d*),(\d*)\)/.exec(this._attrs[ATTR_DEFINITION]);
         if (match) {
             const [, _file, _row, _col] = match;
             _file.replace("/./", "/");
@@ -52,7 +56,7 @@ class GraphItem {
                 column: +_col
             };
         }
-        throw new Error(`Bad definition:  ${this.attrs[ATTR_DEFINITION]}`);
+        throw new Error(`Bad definition:  ${this._attrs[ATTR_DEFINITION]}`);
     }
 }
 
@@ -289,6 +293,7 @@ export class Graph implements ISubgraph {
     private _allSubgraphs = new Dictionary<Subgraph>();
     private _allVertices = new Dictionary<Vertex>();
     private _allEdges = new Dictionary<Edge>();
+    private _attrs = new Dictionary<any>();
 
     constructor(id: string, attrs?: StringAnyMap) {
         this._root = new Subgraph(this, null, id, attrs);
@@ -301,6 +306,10 @@ export class Graph implements ISubgraph {
 
     id(): string {
         return this._root.id();
+    }
+
+    attrs(): Dictionary<any> {
+        return this._attrs;
     }
 
     remove(): void {

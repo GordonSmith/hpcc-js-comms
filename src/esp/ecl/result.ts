@@ -2,9 +2,9 @@ import { Cache } from "../../collections/cache";
 import { StateObject } from "../../collections/stateful";
 import { IConnection, IOptions } from "../../comms/connection";
 import { exists } from "../../util/object";
-import { parseXSD, XSDSchema } from "../../util/saxParser";
 import { DFULogicalFile } from "../services/wsDFU";
 import { ECLResult, ECLSchemas, Service, WUResultRequest, WUResultResponse } from "../services/wsWorkunits";
+import { parseXSD, XSDSchema } from "./xsdParser";
 
 export interface ECLResultEx extends ECLResult {
     Wuid: string;

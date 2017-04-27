@@ -6,7 +6,7 @@ import { logger } from "../../src/util/logging";
 describe.only("eclcc", function () {
     logger.debug(process.cwd());
     let ct: ClientTools;
-    it("locateClientTools", function () {
+    it.only("locateClientTools", function () {
         return locateClientTools().then((clientTools) => {
             expect(clientTools).to.exist;
             logger.debug(clientTools.eclccPath);
@@ -40,6 +40,13 @@ describe.only("eclcc", function () {
             expect(archive.err.length).to.be.greaterThan(0);
             logger.debug(archive.err);
             return archive;
+        });
+    });
+    it.only("fetchMeta", function () {
+        expect(ct).to.exist;
+        return ct.fetchMeta("./test/clienttools/GenData.ecl").then(workspace => {
+            expect(workspace).to.exist;
+            return workspace;
         });
     });
     it("createLocalWU", function () {

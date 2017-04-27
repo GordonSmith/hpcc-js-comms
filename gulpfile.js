@@ -141,6 +141,13 @@ gulp.task('watch', function () {
     });
 });
 
+gulp.task('watch-node', function () {
+    gulp.start("compile-src-watch");
+    return watch('lib/**/*.js', function () {
+        gulp.start("bundle-node");
+    });
+});
+
 //  Version Bumping  ---
 gulp.task("bump-package", [], function () {
     var args = {};

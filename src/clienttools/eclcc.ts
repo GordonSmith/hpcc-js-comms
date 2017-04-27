@@ -8,7 +8,7 @@ import * as tmp from "tmp";
 import { logger } from "../util/logging";
 import { exists } from "../util/object";
 import { xml2json } from "../util/saxParser";
-import { attachWorkspace } from "./eclMeta";
+import { attachWorkspace, Workspace } from "./eclMeta";
 
 const exeExt = os.type() === "Windows_NT" ? ".exe" : "";
 
@@ -225,6 +225,21 @@ export class ClientTools {
             });
         }
         return [];
+    }
+
+    attachWorkspace(): Workspace {
+        return attachWorkspace(this.cwd);
+    }
+
+    fetchMeta(filePath: string): Promise<Workspace> {
+        const args = ["-M"].concat([filePath]);
+        return this.execFile(this.eclccPath, this.cwd, this.args(args), "eclcc", `Cannot find ${this.eclccPath}`).then((response: IExecFile) => {
+            const metaWorkspace = attachWorkspace(this.cwd);
+            if (response && response.stdout && response.stdout.length) {
+                metaWorkspace.parseMetaXML(response.stdout);
+            }
+            return metaWorkspace;
+        });
     }
 
     syntaxCheck(filePath: string): Promise<IECLError[]> {

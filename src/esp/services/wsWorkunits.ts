@@ -172,7 +172,7 @@ export interface Variables {
     ECLVariable: any[];
 }
 
-export interface ECLGraph {
+export interface IECLGraph {
     Name: string;
     Label: string;
     Type: string;
@@ -182,7 +182,7 @@ export interface ECLGraph {
 }
 
 export interface Graphs {
-    ECLGraph: ECLGraph[];
+    ECLGraph: IECLGraph[];
 }
 
 export interface Workunit extends ECLWorkunit {
@@ -825,7 +825,7 @@ export class Service {
     private _connection: ESPConnection;
 
     constructor(optsConnection: IOptions | IConnection) {
-        this._connection = new ESPConnection(optsConnection, "WsWorkunits", "1.67");
+        this._connection = new ESPConnection(optsConnection, "WsWorkunits", "1.68");
     }
 
     connection(): ESPConnection {
