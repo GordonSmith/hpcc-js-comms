@@ -955,8 +955,9 @@ export class Service {
     WUCDebug(request: WUCDebugRequest): Promise<XMLNode> {
         return this._connection.send("WUCDebug", request).then((response) => {
             const retVal = xml2json(response.Result);
-            if (retVal.children.length) {
-                return retVal.children[0];
+            const children = retVal.children();
+            if (children.length) {
+                return children[0];
             }
             return null;
         });

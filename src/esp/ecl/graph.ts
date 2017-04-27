@@ -79,21 +79,22 @@ export function createXGMMLGraph(id: string, graphs: XMLNode): Digraph {
     const graph = new Digraph(id);
 
     const stack: ISubgraph[] = [graph];
-    walkXmlJson(graphs, (tag: string, attributes: StringAnyMap, children: XMLNode[], _stack) => {
+    walkXmlJson(graphs, (tag: string, attributes: StringAnyMap, childNodes: XMLNode[], _stack) => {
         const top = stack[stack.length - 1];
         switch (tag) {
             case "graph":
                 break;
             case "node":
-                if (children.length && children[0].children.length && children[0].children[0].name === "graph") {
-                    const subgraph = graph.createSubgraph(top, `graph${attributes["id"]}`, flattenAtt(children));
+                if (childNodes.length && childNodes[0].children().length && childNodes[0].children()[0].name === "graph") {
+                    const subgraph = graph.createSubgraph(top, `graph${attributes["id"]}`, flattenAtt(childNodes));
                     stack.push(subgraph);
                 } else {
-                    graph.createVertex(top, attributes["id"], attributes["label"], flattenAtt(children));
                 }
+                // TODO:  Is this really a node when its also a subgraph?
+                graph.createVertex(top, attributes["id"], attributes["label"], flattenAtt(childNodes));
                 break;
             case "edge":
-                graph.createEdge(top, attributes["id"], attributes["source"], attributes["target"], flattenAtt(children));
+                graph.createEdge(top, attributes["id"], attributes["source"], attributes["target"], flattenAtt(childNodes));
                 break;
             default:
         }

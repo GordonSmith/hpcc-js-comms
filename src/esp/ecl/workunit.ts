@@ -311,7 +311,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
                 return true;
             default:
         }
-        return false;
+        return this._debugMode;
     }
 
     isRunning(): boolean {
@@ -741,6 +741,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
             }
             return new XMLNode(command);
         }).catch((_) => {
+            logger.error(_);
             return Promise.resolve(new XMLNode(command));
         });
     }
@@ -787,9 +788,9 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
     }
 
     protected debugBreakpointResponseParser(rootNode: StringAnyMap) {
-        return rootNode.children.map((childNode: any) => {
+        return rootNode.children().map((childNode: XMLNode) => {
             if (childNode.name === "break") {
-                return childNode.attributes;
+                return childNode.$;
             }
         });
     }

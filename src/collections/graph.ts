@@ -13,17 +13,19 @@ export interface IGraphItem {
     className(): string;
     id(): string;
     attrs(): Dictionary<any>;
+    parent(): ISubgraph;
+    getNearestDefinition(backwards?: boolean): IECLDefintion;
 }
 
 class GraphItem {
-    protected graph: Graph;
-    protected parent: Subgraph;
+    protected _graph: Graph;
+    protected _parent: Subgraph;
     protected readonly _id: string;
     readonly _attrs: Dictionary<any>;
 
     constructor(graph: Graph, parent: Subgraph, id: string, attrs: StringAnyMap) {
-        this.graph = graph;
-        this.parent = parent;
+        this._graph = graph;
+        this._parent = parent;
         this._id = id;
         this._attrs = new Dictionary<any>(attrs);
     }
@@ -40,12 +42,16 @@ class GraphItem {
         return this._attrs;
     }
 
+    parent(): ISubgraph {
+        return this._parent;
+    }
+
     hasECLDefinition(): boolean {
-        return this._attrs[ATTR_DEFINITION] !== undefined;
+        return this._attrs.get(ATTR_DEFINITION) !== undefined;
     }
 
     getECLDefinition(): IECLDefintion {
-        const match = /([a-z]:\\(?:[-\w\.\d]+\\)*(?:[-\w\.\d]+)?|(?:\/[\w\.\-]+)+)\((\d*),(\d*)\)/.exec(this._attrs[ATTR_DEFINITION]);
+        const match = /([a-z]:\\(?:[-\w\.\d]+\\)*(?:[-\w\.\d]+)?|(?:\/[\w\.\-]+)+)\((\d*),(\d*)\)/.exec(this._attrs.get(ATTR_DEFINITION));
         if (match) {
             const [, _file, _row, _col] = match;
             _file.replace("/./", "/");
@@ -56,7 +62,7 @@ class GraphItem {
                 column: +_col
             };
         }
-        throw new Error(`Bad definition:  ${this._attrs[ATTR_DEFINITION]}`);
+        throw new Error(`Bad definition:  ${this._attrs.get(ATTR_DEFINITION)}`);
     }
 }
 
@@ -80,18 +86,18 @@ class Subgraph extends GraphItem implements ISubgraph {
     }
 
     destroy() {
-        this.parent.removeSubgraph(this);
-        this._edges.values().forEach(edge => this.graph.destroyEdge(edge));
-        this._vertices.values().forEach(vertex => this.graph.destroyVertex(vertex));
-        this._subgraphs.values().forEach(subgraph => this.graph.destroySubgraph(subgraph));
+        this._parent.removeSubgraph(this);
+        this._edges.values().forEach(edge => this._graph.destroyEdge(edge));
+        this._vertices.values().forEach(vertex => this._graph.destroyVertex(vertex));
+        this._subgraphs.values().forEach(subgraph => this._graph.destroySubgraph(subgraph));
     }
 
     remove(): void {
-        this.graph.destroySubgraph(this);
+        this._graph.destroySubgraph(this);
     }
 
     createSubgraph(id: string, attrs?: StringAnyMap): ISubgraph {
-        return this.graph.createSubgraph(this, id, attrs);
+        return this._graph.createSubgraph(this, id, attrs);
     }
 
     addSubgraph(subgraph: Subgraph) {
@@ -109,7 +115,7 @@ class Subgraph extends GraphItem implements ISubgraph {
     }
 
     createVertex(id: string, label: string, attrs?: StringAnyMap): IVertex {
-        return this.graph.createVertex(this, id, label, attrs);
+        return this._graph.createVertex(this, id, label, attrs);
     }
 
     addVertex(vertex: Vertex) {
@@ -127,7 +133,7 @@ class Subgraph extends GraphItem implements ISubgraph {
     }
 
     createEdge(id: string, sourceID: string, targetID: string, attrs?: StringAnyMap): IEdge {
-        return this.graph.createEdge(this, id, sourceID, targetID, attrs);
+        return this._graph.createEdge(this, id, sourceID, targetID, attrs);
     }
 
     addEdge(edge: Edge) {
@@ -166,7 +172,7 @@ class Subgraph extends GraphItem implements ISubgraph {
         return this._edges.values();
     }
 
-    getNearestDefinition(backwards: boolean = true): IECLDefintion {
+    getNearestDefinition(backwards: boolean = false): IECLDefintion {
         //  Todo - order is incorrect...
         if (this.hasECLDefinition()) {
             return this.getECLDefinition();
@@ -177,7 +183,7 @@ class Subgraph extends GraphItem implements ISubgraph {
         }
         let retVal: IECLDefintion;
         vertices.some((vertex) => {
-            retVal = vertex.getNearestDefinition();
+            retVal = vertex.getNearestDefinition(backwards);
             if (retVal) {
                 return true;
             }
@@ -203,9 +209,9 @@ class Vertex extends GraphItem implements IVertex {
     }
 
     destroy() {
-        this.parent.removeVertex(this);
-        this.inEdges.forEach(edge => this.graph.destroyEdge(edge));
-        this.outEdges.forEach(edge => this.graph.destroyEdge(edge));
+        this._parent.removeVertex(this);
+        this.inEdges.forEach(edge => this._graph.destroyEdge(edge));
+        this.outEdges.forEach(edge => this._graph.destroyEdge(edge));
     }
 
     label(): string {
@@ -236,13 +242,13 @@ class Vertex extends GraphItem implements IVertex {
         this.outEdges.splice(idx, 1);
     }
 
-    getNearestDefinition(): IECLDefintion {
+    getNearestDefinition(backwards: boolean = true): IECLDefintion {
         if (this.hasECLDefinition()) {
             return this.getECLDefinition();
         }
         let retVal: IECLDefintion;
         this.inEdges.some((edge) => {
-            retVal = edge.getNearestDefinition();
+            retVal = edge.getNearestDefinition(backwards);
             if (retVal) {
                 return true;
             }
@@ -253,6 +259,7 @@ class Vertex extends GraphItem implements IVertex {
 }
 
 export interface IEdge extends IGraphItem {
+    sourceID(): string;
 }
 
 class Edge extends Subgraph implements IEdge {
@@ -274,17 +281,25 @@ class Edge extends Subgraph implements IEdge {
         this.target.addInEdge(this);
     }
 
+    sourceID(): string {
+        return this.source.id();
+    }
+
+    targetID(): string {
+        return this.target.id();
+    }
+
     destroy() {
-        this.parent.removeEdge(this);
+        this._parent.removeEdge(this);
         this.source.removeOutEdge(this);
         this.target.removeInEdge(this);
     }
 
-    getNearestDefinition(): IECLDefintion {
+    getNearestDefinition(backwards: boolean = false): IECLDefintion {
         if (this.hasECLDefinition()) {
             return this.getECLDefinition();
         }
-        return this.source.getNearestDefinition();
+        return this.source.getNearestDefinition(backwards);
     }
 }
 
@@ -312,6 +327,10 @@ export class Graph implements ISubgraph {
         return this._attrs;
     }
 
+    parent(): ISubgraph {
+        return null;
+    }
+
     remove(): void {
         //  Do nothing  ---
     }
@@ -323,6 +342,7 @@ export class Graph implements ISubgraph {
     vertices(): IVertex[] {
         return this._root.vertices();
     }
+
     edges(): IEdge[] {
         return this._root.edges();
     }
@@ -381,16 +401,32 @@ export class Graph implements ISubgraph {
         edge.destroy();
     }
 
+    allSubgraph(id): ISubgraph {
+        return this._allSubgraphs.get(id);
+    }
+
     allSubgraphs(): ISubgraph[] {
         return this._allSubgraphs.values().filter(subgraph => subgraph !== this._root);
+    }
+
+    allVertex(id): IVertex {
+        return this._allVertices.get(id);
     }
 
     allVertices(): IVertex[] {
         return this._allVertices.values();
     }
 
+    allEdge(id): IEdge {
+        return this._allEdges.get(id);
+    }
+
     allEdges(): IEdge[] {
         return this._allEdges.values();
+    }
+
+    getNearestDefinition(backwards: boolean = false): IECLDefintion {
+        return this._root.getNearestDefinition(backwards);
     }
 
     breakpointLocations(path?: string): IECLDefintion[] {

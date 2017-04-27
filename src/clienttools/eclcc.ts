@@ -7,7 +7,7 @@ import * as tmp from "tmp";
 
 import { logger } from "../util/logging";
 import { exists } from "../util/object";
-import { xml2json } from "../util/saxParser";
+import { xml2json, XMLNode } from "../util/saxParser";
 import { attachWorkspace, Workspace } from "./eclMeta";
 
 const exeExt = os.type() === "Windows_NT" ? ".exe" : "";
@@ -168,7 +168,7 @@ export class ClientTools {
         return this._version;
     }
 
-    private loadXMLDoc(filePath: any, removeOnRead?: boolean) {
+    private loadXMLDoc(filePath: any, removeOnRead?: boolean): Promise<XMLNode> {
         return new Promise((resolve, _reject) => {
             const fileData = fs.readFileSync(filePath, "ascii");
             const retVal = xml2json(fileData);
@@ -222,6 +222,9 @@ export class ClientTools {
                     const msg = code + ":  " + _msg;
                     return { filePath, line, col, msg, severity };
                 }
+                return null;
+            }).filter((eclError: IECLError) => {
+                return !!eclError;
             });
         }
         return [];

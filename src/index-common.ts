@@ -1,6 +1,7 @@
 export const version = "0.0.1";
 
 //  Util/Collections  - Should be its own package?
+export { logger } from "./util/logging";
 export { IObserverHandle } from "./util/observer";
 export { espTime2Seconds } from "./util/esp";
 export { Graph, IGraphItem } from "./collections/graph";
