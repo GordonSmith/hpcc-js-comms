@@ -3,7 +3,7 @@ import { Cache } from "../../collections/cache";
 import { Graph, IECLDefintion } from "../../collections/graph";
 import { IEvent, StateCallback, StateEvents, StateObject, StatePropCallback } from "../../collections/stateful";
 import { IConnection, IOptions } from "../../comms/connection";
-import { logger } from "../../util/logging";
+import { scopedLogger } from "../../util/logging";
 import { deepMixinT } from "../../util/object";
 import { IObserverHandle } from "../../util/observer";
 import { StringAnyMap, XMLNode } from "../../util/saxParser";
@@ -20,6 +20,7 @@ import { Timer } from "./timer";
 
 const formatter = utcFormat("%Y-%m-%dT%H:%M:%S.%LZ");
 const parser = utcParse("%Y-%m-%dT%H:%M:%S.%LZ");
+const logger = scopedLogger("workunit.ts");
 
 export const WUStateID = WsWorkunits.WUStateID;
 

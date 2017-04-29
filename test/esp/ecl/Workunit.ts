@@ -1,10 +1,11 @@
 import { expect } from "chai";
 
 import { Workunit } from "../../../src/esp/ecl/workunit";
-import { logger } from "../../../src/util/logging";
+import { scopedLogger } from "../../../src/util/logging";
 import { ESP_URL, isTravis } from "../../testLib";
 
-const WUID = "W20170424-070701 ";
+const logger = scopedLogger("test/workunit");
+const WUID = "W20170413-093947";
 
 describe("Workunit", function () {
     this.timeout(5000);

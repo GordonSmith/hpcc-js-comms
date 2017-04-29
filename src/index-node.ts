@@ -1,6 +1,6 @@
 // DOM Parser polyfill  ---
 import { DOMParser } from "xmldom";
-import { root } from "./util/runtime";
+import { root } from "./util/platform";
 root.DOMParser = DOMParser;
 
 //  XHR polyfill  ---
@@ -14,4 +14,3 @@ initNodeRequest(nodeRequest);
 
 export * from "./index-common";
 export { locateAllClientTools, locateClientTools, IECLError } from "./clienttools/eclcc";
-export { attachWorkspace, qualifiedIDBoundary, ECLScope } from "./clienttools/eclMeta";

@@ -1,5 +1,7 @@
 import { Workunit } from "../src/esp/ecl/workunit";
-import { logger } from "../src/util/logging";
+import { scopedLogger } from "../src/util/logging";
+
+const logger = scopedLogger(`${__dirname}/${__filename}`);
 
 describe.skip("Readme quick start", function () {
     it("Quick Submit", function () {

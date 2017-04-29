@@ -5,11 +5,12 @@ import * as path from "path";
 import * as semver from "semver";
 import * as tmp from "tmp";
 
-import { logger } from "../util/logging";
+import { scopedLogger } from "../util/logging";
 import { exists } from "../util/object";
 import { xml2json, XMLNode } from "../util/saxParser";
 import { attachWorkspace, Workspace } from "./eclMeta";
 
+const logger = scopedLogger("clienttools/eclcc");
 const exeExt = os.type() === "Windows_NT" ? ".exe" : "";
 
 interface IExecFile {

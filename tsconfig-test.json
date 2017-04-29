@@ -2,9 +2,7 @@
     "extends": "./tsconfig-common.json",
     "compilerOptions": {
         "outDir": "./lib-test",
-        "module": "commonjs",
-        "jsx": "react",
-        "reactNamespace": "this"
+        "module": "commonjs"
     },
     "include": [
         "./test/index-node.ts",

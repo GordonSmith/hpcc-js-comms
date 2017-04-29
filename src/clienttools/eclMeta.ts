@@ -2,8 +2,11 @@ import * as path from "path";
 
 import { Dictionary } from "../collections/dictionary";
 import { find } from "../util/array";
-import { logger } from "../util/logging";
+import { scopedLogger } from "../util/logging";
 import { SAXStackParser, XMLNode } from "../util/saxParser";
+
+const logger = scopedLogger("clienttools/eclmeta");
+logger.info("Test");
 
 const _inspect = false;
 function inspect(obj: any, _id: string, known: any) {

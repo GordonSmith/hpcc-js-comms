@@ -6,6 +6,9 @@ export { IObserverHandle } from "./util/observer";
 export { espTime2Seconds } from "./util/esp";
 export { Graph, IGraphItem } from "./collections/graph";
 
+//  Client Tools  ---
+export { attachWorkspace, qualifiedIDBoundary, ECLScope } from "./clienttools/eclMeta";
+
 //  Comms transport - Should be its own package?
 import * as connecton from "./comms/connection";
 export const Connecton = connecton;

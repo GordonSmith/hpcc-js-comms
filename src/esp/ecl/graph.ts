@@ -2,12 +2,14 @@ import { Cache } from "../../collections/cache";
 import { Graph as Digraph, ISubgraph } from "../../collections/graph";
 import { Stack } from "../../collections/stack";
 import { StateObject } from "../../collections/stateful";
-import { logger } from "../../util/logging";
+import { scopedLogger } from "../../util/logging";
 import { StringAnyMap, XMLNode } from "../../util/saxParser";
 import { IECLGraph } from "../services/wsWorkunits";
 import { Scope } from "./scope";
 import { Timer } from "./timer";
 import { Workunit } from "./workunit";
+
+const logger = scopedLogger("ecl/egraph");
 
 export interface ECLGraphEx extends IECLGraph {
     Time: number;
