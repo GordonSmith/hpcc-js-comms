@@ -13,4 +13,10 @@ initNodeRequest(nodeRequest);
 //  initD3Request(d3Request);
 
 export * from "./index-common";
+
+//  Client Tools  ---
 export { locateAllClientTools, locateClientTools, IECLError } from "./clienttools/eclcc";
+export { attachWorkspace, qualifiedIDBoundary, ECLScope } from "./clienttools/eclMeta";
+
+
+
