@@ -106,24 +106,29 @@ export class Connection implements IConnection {
                 password: this._opts.password,
                 timeout: this._opts.timeoutSecs * 1000
             };
+            const oldESPAuth = `Basic ${btoa(this._opts.userID + ":" + this._opts.password)}`;
             switch (verb) {
                 case "GET":
+                    options.headers = {
+                        Authorization: oldESPAuth
+                    };
                     options.uri += "?" + this.serialize(request);
                     break;
                 case "POST":
                     options.headers = {
                         "X-Requested-With": "XMLHttpRequest",
-                        "Content-Type": "application/x-www-form-urlencoded"
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "Authorization": oldESPAuth
                     };
                     options.rejectUnauthorized = this._opts.rejectUnauthorized;
                     options.body = this.serialize(request);
                     break;
                 default:
             }
-            _nodeRequest(options, (err: any, result: any, body: any) => {
+            _nodeRequest(options, (err: any, resp: any, body: any) => {
                 if (err) {
                     reject(new Error(err));
-                } else if (result && result.statusCode === 200) {
+                } else if (resp && resp.statusCode === 200) {
                     resolve(responseType === ResponseType.JSON ? this.deserialize(body) : body);
                 } else {
                     reject(new Error(body));
@@ -168,13 +173,13 @@ export class Connection implements IConnection {
                     ;
             }
             xhr
-                .send(verb, options.body, (err: any, result: any) => {
+                .send(verb, options.body, (err: any, resp: any) => {
                     if (err) {
                         reject(new Error(err));
-                    } else if (result && result.status === 200) {
-                        resolve(responseType === ResponseType.JSON ? this.deserialize(result.responseText) : result.responseText);
+                    } else if (resp && resp.status === 200) {
+                        resolve(responseType === ResponseType.JSON ? this.deserialize(resp.responseText) : result.responseText);
                     } else {
-                        reject(new Error(result.responseText));
+                        reject(new Error(resp.responseText));
                     }
                 });
         });

@@ -5,6 +5,23 @@ import { isBrowser, isTravis } from "../../src/util/platform";
 
 export const ESP_URL = isTravis() ? "http://52.51.90.23:8010/" : "http://192.168.3.22:8010/";
 
+describe.skip("Old Server", function () {
+    it("authentication", function () {
+        const transport = new Connection({
+            baseUrl: "http://10.240.32.125:8010/",
+            userID: "gosmith",
+            password: "ch@ng3m3",
+            type: RequestType.POST
+        });
+        return transport.send("WsWorkunits/WUQuery.json", {}).then((response) => {
+            var d = 0;
+        }).catch((e) => {
+            console.log(e);
+            expect(false).to.be.true;
+        });
+    });
+});
+
 describe("Connection", function () {
     this.timeout(5000);
     it("Error:  no domain", function () {

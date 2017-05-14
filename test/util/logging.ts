@@ -4,7 +4,7 @@ import { Level, scopedLogger } from "../../src/util/logging";
 
 const logger = scopedLogger("test/util/logging.ts");
 
-describe.only("util/logging.ts", function () {
+describe("util/logging.ts", function () {
     it("basic", function () {
         expect(logger).exist;
         logger.debug("debug test");
