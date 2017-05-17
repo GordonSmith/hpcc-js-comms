@@ -26,7 +26,7 @@ const colours = {
 export class Logging {
     private static _instance: Logging;
     private _levelStack = new Stack<Level>();
-    private _level = Level.error;
+    private _level = Level.info;
     private _filter: string = "";
 
     public static Instance() {

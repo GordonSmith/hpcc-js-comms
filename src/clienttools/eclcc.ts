@@ -338,14 +338,25 @@ export function locateAllClientTools() {
     });
 }
 
+let eclccPathMsg = "";
 export function locateClientTools(overridePath: string = "", cwd: string = ".", includeFolders: string[] = [], legacyMode: boolean = false): Promise<ClientTools> {
     if (overridePath && fs.existsSync(overridePath)) {
-        return Promise.resolve(new ClientTools(overridePath));
+        const msg = `Using eclccPath setting:  ${overridePath}`;
+        if (eclccPathMsg !== msg) {
+            logger.info(msg);
+            eclccPathMsg = msg;
+        }
+        return Promise.resolve(new ClientTools(overridePath, cwd, includeFolders, legacyMode));
     }
     return locateAllClientTools().then((allClientToolsCache2) => {
         //  TODO find best match  ---
         if (!allClientToolsCache2.length) {
-            throw new Error("Unable to locate ECL CLient Tools.");
+            throw new Error("Unable to locate ECL Client Tools.");
+        }
+        const msg = `eclcc path found:  ${allClientToolsCache2[0].eclccPath}`;
+        if (eclccPathMsg !== msg) {
+            logger.info(msg);
+            eclccPathMsg = msg;
         }
         return allClientToolsCache2[0].clone(cwd, includeFolders, legacyMode);
     });
