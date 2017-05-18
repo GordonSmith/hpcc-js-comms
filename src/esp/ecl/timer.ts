@@ -1,9 +1,9 @@
 import { StateObject } from "../../collections/stateful";
 import { IConnection, IOptions } from "../../comms/connection";
 import { espTime2Seconds } from "../../util/esp";
-import { ECLTimer, Service } from "../services/wsWorkunits";
+import { Service, WUInfo } from "../services/wsWorkunits";
 
-export interface ECLTimerEx extends ECLTimer {
+export interface ECLTimerEx extends WUInfo.ECLTimer {
     Wuid: string;
     Seconds: number;
     HasSubGraphId: boolean;
@@ -12,7 +12,7 @@ export interface ECLTimerEx extends ECLTimer {
 export class Timer extends StateObject<ECLTimerEx, ECLTimerEx> implements ECLTimerEx {
     protected connection: Service;
 
-    get properties(): ECLTimer { return this.get(); }
+    get properties(): WUInfo.ECLTimer { return this.get(); }
     get Wuid(): string { return this.get("Wuid"); }
     get Name(): string { return this.get("Name"); }
     get Value(): string { return this.get("Value"); }
@@ -22,7 +22,7 @@ export class Timer extends StateObject<ECLTimerEx, ECLTimerEx> implements ECLTim
     get HasSubGraphId(): boolean { return this.get("HasSubGraphId"); }
     get count(): number { return this.get("count"); }
 
-    constructor(optsConnection: IOptions | IConnection | Service, wuid: string, eclTimer: ECLTimer) {
+    constructor(optsConnection: IOptions | IConnection | Service, wuid: string, eclTimer: WUInfo.ECLTimer) {
         super();
         if (optsConnection instanceof Service) {
             this.connection = optsConnection;

@@ -1,25 +1,39 @@
 import { IConnection, IOptions } from "../../comms/connection";
 import { ESPConnection } from "../comms/connection";
 
-export interface EclServerQueueRequest {
-    EclServerQueue?: string;
-}
+export namespace TpLogicalClusterQuery {
+    export interface Request {
+        EclServerQueue?: string;
+    }
 
-export interface TpLogicalCluster {
-    Name: string;
-    Queue?: any;
-    LanguageVersion: string;
-    Process?: any;
-    Type: string;
-}
+    export interface Exception {
+        Code: string;
+        Audience: string;
+        Source: string;
+        Message: string;
+    }
 
-export interface TpLogicalClusters {
-    TpLogicalCluster: TpLogicalCluster[];
-}
+    export interface Exceptions {
+        Source: string;
+        Exception: Exception[];
+    }
 
-export interface TpLogicalClusterQueryResponse {
-    default?: TpLogicalCluster;
-    TpLogicalClusters: TpLogicalClusters;
+    export interface TpLogicalCluster {
+        Name: string;
+        Queue: string;
+        LanguageVersion: string;
+        Process: string;
+        Type: string;
+    }
+
+    export interface TpLogicalClusters {
+        TpLogicalCluster: TpLogicalCluster[];
+    }
+
+    export interface Response {
+        Exceptions: Exceptions;
+        TpLogicalClusters: TpLogicalClusters;
+    }
 }
 
 export class Service {
@@ -29,14 +43,14 @@ export class Service {
         this._connection = new ESPConnection(optsConnection, "WsTopology", "1.25");
     }
 
-    TpLogicalClusterQuery(request: EclServerQueueRequest = {}): Promise<TpLogicalClusterQueryResponse> {
+    TpLogicalClusterQuery(request: TpLogicalClusterQuery.Request = {}): Promise<TpLogicalClusterQuery.Response> {
         return this._connection.send("WUUpdate", request);
     }
 
-    DefaultTpLogicalClusterQuery(request: EclServerQueueRequest = {}): Promise<TpLogicalCluster> {
+    DefaultTpLogicalClusterQuery(request: TpLogicalClusterQuery.Request = {}): Promise<TpLogicalClusterQuery.TpLogicalCluster> {
         return this.TpLogicalClusterQuery(request).then((response) => {
-            if (response.default) {
-                return response.default;
+            if ((response as any).default) {
+                return (response as any).default;
             }
             let firstHThor;
             let first;

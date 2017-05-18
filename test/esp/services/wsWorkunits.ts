@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
 import { Connection, RequestType } from "../../../src/comms/connection";
-import { ECLWorkunit, Service as WsWorkunits } from "../../../src/esp/services/wsWorkunits";
+import { Service as WsWorkunits, WUQuery } from "../../../src/esp/services/wsWorkunits";
 import { ESP_URL, isBrowser, isTravis } from "../../testLib";
 
 describe("WsWorkunits", function () {
@@ -22,7 +22,7 @@ describe("WsWorkunits", function () {
 });
 
 function doTest(wsWorkunits: WsWorkunits) {
-    let wu: ECLWorkunit;
+    let wu: WUQuery.ECLWorkunit;
     it("WUQuery", function () {
         return wsWorkunits.WUQuery().then((response) => {
             expect(response).exist;

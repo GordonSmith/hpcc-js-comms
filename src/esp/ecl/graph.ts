@@ -4,14 +4,14 @@ import { Stack } from "../../collections/stack";
 import { StateObject } from "../../collections/stateful";
 import { scopedLogger } from "../../util/logging";
 import { StringAnyMap, XMLNode } from "../../util/saxParser";
-import { IECLGraph } from "../services/wsWorkunits";
+import { WUInfo } from "../services/wsWorkunits";
 import { Scope } from "./scope";
 import { Timer } from "./timer";
 import { Workunit } from "./workunit";
 
 const logger = scopedLogger("ecl/egraph");
 
-export interface ECLGraphEx extends IECLGraph {
+export interface ECLGraphEx extends WUInfo.ECLGraph {
     Time: number;
 }
 
@@ -23,11 +23,14 @@ export class ECLGraph extends StateObject<ECLGraphEx, ECLGraphEx> implements ECL
     get Label(): string { return this.get("Label"); }
     get Type(): string { return this.get("Type"); }
     get Complete(): boolean { return this.get("Complete"); }
-    get WhenStarted(): Date { return this.get("WhenStarted"); }
-    get WhenFinished(): Date { return this.get("WhenFinished"); }
+    get WhenStarted(): string { return this.get("WhenStarted"); }
+    get WhenFinished(): string { return this.get("WhenFinished"); }
     get Time(): number { return this.get("Time"); }
+    get Running(): boolean { return this.get("Running"); }
+    get RunningId(): number { return this.get("RunningId"); }
+    get Failed(): boolean { return this.get("Failed"); }
 
-    constructor(wu: Workunit, eclGraph: IECLGraph, eclTimers: Timer[]) {
+    constructor(wu: Workunit, eclGraph: WUInfo.ECLGraph, eclTimers: Timer[]) {
         super();
         this.wu = wu;
         let duration = 0;
@@ -48,7 +51,7 @@ export class ECLGraph extends StateObject<ECLGraphEx, ECLGraphEx> implements ECL
     }
 }
 
-export class GraphCache extends Cache<IECLGraph, ECLGraph> {
+export class GraphCache extends Cache<WUInfo.ECLGraph, ECLGraph> {
     constructor() {
         super((obj) => {
             return Cache.hash([obj.Name]);

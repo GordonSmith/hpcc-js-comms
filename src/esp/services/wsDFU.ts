@@ -1,70 +1,84 @@
 import { IConnection, IOptions } from "../../comms/connection";
 import { ESPConnection } from "../comms/connection";
 
-export interface DFULogicalFile {
-    Prefix: string;
-    NodeGroup: string;
-    Directory: string;
-    Description?: any;
-    Parts: string;
-    Name: string;
-    Owner: string;
-    Totalsize: string;
-    RecordCount: string;
-    Modified: string;
-    LongSize?: any;
-    LongRecordCount?: any;
-    isSuperfile: boolean;
-    isDirectory: boolean;
-    Replicate: boolean;
-    IntSize: number;
-    IntRecordCount: number;
-    FromRoxieCluster?: any;
-    BrowseData: boolean;
-    IsCompressed: boolean;
-    ContentType: string;
-    CompressedFileSize?: any;
-    SuperOwners?: any;
-    Persistent: boolean;
-    IsProtected: boolean;
-}
+export namespace DFUQuery {
+    export interface Exception {
+        Code: string;
+        Audience: string;
+        Source: string;
+        Message: string;
+    }
 
-export interface DFULogicalFiles {
-    DFULogicalFile: DFULogicalFile[];
-}
+    export interface Exceptions {
+        Source: string;
+        Exception: Exception[];
+    }
 
-export interface DFUQueryResponse {
-    DFULogicalFiles: DFULogicalFiles;
-    Prefix?: any;
-    NodeGroup?: any;
-    LogicalName?: any;
-    Description?: any;
-    Owner?: any;
-    StartDate?: any;
-    EndDate?: any;
-    FileType?: any;
-    FileSizeFrom: number;
-    FileSizeTo: number;
-    FirstN: number;
-    PageSize: number;
-    PageStartFrom: number;
-    LastPageFrom: number;
-    PageEndAt: number;
-    PrevPageFrom: number;
-    NextPageFrom: number;
-    NumFiles: number;
-    Sortby?: any;
-    Descending: boolean;
-    BasicQuery: string;
-    ParametersForPaging: string;
-    Filters: string;
-    CacheHint: number;
-    IsSubsetOfFiles?: any;
-    Warning?: any;
-}
+    export interface DFULogicalFile {
+        Prefix: string;
+        ClusterName: string;
+        NodeGroup: string;
+        Directory: string;
+        Description: string;
+        Parts: string;
+        Name: string;
+        Owner: string;
+        Totalsize: string;
+        RecordCount: string;
+        Modified: string;
+        LongSize: string;
+        LongRecordCount: string;
+        isSuperfile: boolean;
+        isZipfile: boolean;
+        isDirectory: boolean;
+        Replicate: boolean;
+        IntSize: number;
+        IntRecordCount: number;
+        FromRoxieCluster: boolean;
+        BrowseData: boolean;
+        IsKeyFile: boolean;
+        IsCompressed: boolean;
+        ContentType: string;
+        CompressedFileSize: number;
+        SuperOwners: string;
+        Persistent: boolean;
+        IsProtected: boolean;
+    }
 
-export interface RootObject {
-    DFUQueryResponse: DFUQueryResponse;
+    export interface DFULogicalFiles {
+        DFULogicalFile: DFULogicalFile[];
+    }
+
+    export interface Response {
+        Exceptions: Exceptions;
+        DFULogicalFiles: DFULogicalFiles;
+        Prefix: string;
+        NodeGroup: string;
+        LogicalName: string;
+        Description: string;
+        Owner: string;
+        StartDate: string;
+        EndDate: string;
+        FileType: string;
+        FileSizeFrom: number;
+        FileSizeTo: number;
+        FirstN: number;
+        PageSize: number;
+        PageStartFrom: number;
+        LastPageFrom: number;
+        PageEndAt: number;
+        PrevPageFrom: number;
+        NextPageFrom: number;
+        NumFiles: number;
+        Sortby: string;
+        Descending: boolean;
+        BasicQuery: string;
+        ParametersForPaging: string;
+        Filters: string;
+        CacheHint: number;
+        IsSubsetOfFiles: boolean;
+        Warning: string;
+    }
 }
 
 export class Service {

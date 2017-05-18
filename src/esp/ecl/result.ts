@@ -2,19 +2,19 @@ import { Cache } from "../../collections/cache";
 import { StateObject } from "../../collections/stateful";
 import { IConnection, IOptions } from "../../comms/connection";
 import { exists } from "../../util/object";
-import { DFULogicalFile } from "../services/wsDFU";
-import { ECLResult, ECLSchemas, Service, WUResultRequest, WUResultResponse } from "../services/wsWorkunits";
+import { DFUQuery } from "../services/wsDFU";
+import { Service, WUInfo, WUResult } from "../services/wsWorkunits";
 import { parseXSD, XSDSchema } from "./xsdParser";
 
-export interface ECLResultEx extends ECLResult {
+export interface ECLResultEx extends WUInfo.ECLResult {
     Wuid: string;
     ResultViews: any[];
 }
-export class Result extends StateObject<ECLResultEx & DFULogicalFile, ECLResultEx | DFULogicalFile> implements ECLResultEx {
+export class Result extends StateObject<ECLResultEx & DFUQuery.DFULogicalFile, ECLResultEx | DFUQuery.DFULogicalFile> implements ECLResultEx {
     protected connection: Service;
     protected xsdSchema: XSDSchema;
 
-    get properties(): ECLResult { return this.get(); }
+    get properties(): WUInfo.ECLResult { return this.get(); }
     get Wuid(): string { return this.get("Wuid"); }
     get Name(): string { return this.get("Name"); }
     get Sequence(): number { return this.get("Sequence"); }
@@ -24,11 +24,12 @@ export class Result extends StateObject<ECLResultEx & DFULogicalFile, ECLResultE
     get IsSupplied(): boolean { return this.get("IsSupplied"); }
     get ShowFileContent() { return this.get("ShowFileContent"); }
     get Total(): number { return this.get("Total"); }
-    get ECLSchemas(): ECLSchemas { return this.get("ECLSchemas"); }
+    get ECLSchemas(): WUInfo.ECLSchemas { return this.get("ECLSchemas"); }
     get NodeGroup(): string { return this.get("NodeGroup"); }
     get ResultViews(): any[] { return this.get("ResultViews"); }
+    get XmlSchema(): string { return this.get("XmlSchema"); }
 
-    constructor(optsConnection: IOptions | IConnection | Service, wuid: string, eclResult: ECLResult, resultViews: any[]) {
+    constructor(optsConnection: IOptions | IConnection | Service, wuid: string, eclResult: WUInfo.ECLResult, resultViews: any[]) {
         super();
         if (optsConnection instanceof Service) {
             this.connection = optsConnection;
@@ -68,8 +69,8 @@ export class Result extends StateObject<ECLResultEx & DFULogicalFile, ECLResultE
         });
     }
 
-    protected WUResult(start: number = 0, count: number = 1, suppressXmlSchema: boolean = false): Promise<WUResultResponse> {
-        const request: WUResultRequest = {} as WUResultRequest;
+    protected WUResult(start: number = 0, count: number = 1, suppressXmlSchema: boolean = false): Promise<WUResult.Response> {
+        const request: WUResult.Request = {} as WUResult.Request;
         if (this.Wuid && this.Sequence !== undefined) {
             request.Wuid = this.Wuid;
             request.Sequence = this.Sequence;
@@ -88,7 +89,7 @@ export class Result extends StateObject<ECLResultEx & DFULogicalFile, ECLResultE
     }
 }
 
-export class ResultCache extends Cache<ECLResult, Result> {
+export class ResultCache extends Cache<WUInfo.ECLResult, Result> {
     constructor() {
         super((obj) => {
             return Cache.hash([obj.Sequence, obj.Name, obj.FileName]);

@@ -8,7 +8,7 @@ import { deepMixinT } from "../../util/object";
 import { IObserverHandle } from "../../util/observer";
 import { StringAnyMap, XMLNode } from "../../util/saxParser";
 import { ESPExceptions } from "../comms/connection";
-import { ActiveWorkunit } from "../services/wsSMC";
+import { Activity } from "../services/wsSMC";
 import * as WsTopology from "../services/wsTopology";
 import * as WsWorkunits from "../services/wsWorkunits";
 import { createXGMMLGraph, ECLGraph, GraphCache } from "./graph";
@@ -56,20 +56,20 @@ export interface ITimeElapsed {
 }
 
 export type WorkunitEvents = "completed" | StateEvents;
-export type UWorkunitState = WsWorkunits.ECLWorkunit & WsWorkunits.Workunit & ActiveWorkunit & IWorkunit & IDebugWorkunit;
-export type IWorkunitState = WsWorkunits.ECLWorkunit | WsWorkunits.Workunit | ActiveWorkunit | IWorkunit | IDebugWorkunit;
-export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implements WsWorkunits.Workunit {
+export type UWorkunitState = WsWorkunits.WUQuery.ECLWorkunit & WsWorkunits.WUInfo.Workunit & Activity.ActiveWorkunit & IWorkunit & IDebugWorkunit;
+export type IWorkunitState = WsWorkunits.WUQuery.ECLWorkunit | WsWorkunits.WUInfo.Workunit | Activity.ActiveWorkunit | IWorkunit | IDebugWorkunit;
+export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implements WsWorkunits.WUInfo.Workunit {
     connection: WsWorkunits.Service;
     topologyConnection: WsTopology.Service;
 
     private _debugMode: boolean = false;
     private _debugAllGraph: any;
-    private _submitAction: WsWorkunits.WUAction;
+    private _submitAction: WsWorkunits.WUUpdate.Action;
     private _monitorHandle: any;
     private _monitorTickCount: number = 0;
 
     //  Accessors  ---
-    get properties(): WsWorkunits.ECLWorkunit & WsWorkunits.Workunit { return this.get(); }
+    get properties(): WsWorkunits.WUQuery.ECLWorkunit & WsWorkunits.WUInfo.Workunit { return this.get(); }
     get Wuid(): string { return this.get("Wuid"); }
     get Owner(): string { return this.get("Owner", ""); }
     get Cluster(): string { return this.get("Cluster", ""); }
@@ -79,12 +79,12 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
     get StateID(): WsWorkunits.WUStateID { return this.get("StateID", WsWorkunits.WUStateID.Unknown); }
     get State(): string { return WsWorkunits.WUStateID[this.StateID]; }
     get Protected(): boolean { return this.get("Protected", false); }
-    get Exceptions(): WsWorkunits.Exceptions { return this.get("Exceptions", { ECLException: [] }); }
+    get Exceptions(): WsWorkunits.WUInfo.Exceptions2 { return this.get("Exceptions", { ECLException: [] }); }
     get ResultViews(): any[] { return this.get("ResultViews", []); }
 
     private _resultCache = new ResultCache();
     get ResultCount(): number { return this.get("ResultCount", 0); }
-    get Results(): WsWorkunits.Results { return this.get("Results", { ECLResult: [] }); }
+    get Results(): WsWorkunits.WUInfo.Results { return this.get("Results", { ECLResult: [] }); }
     get CResults(): Result[] {
         return this.Results.ECLResult.map((eclResult) => {
             return this._resultCache.get(eclResult, () => {
@@ -99,7 +99,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
         });
         return retVal;
     }
-    get Timers(): WsWorkunits.Timers { return this.get("Timers", { ECLTimer: [] }); }
+    get Timers(): WsWorkunits.WUInfo.Timers { return this.get("Timers", { ECLTimer: [] }); }
     get CTimers(): Timer[] {
         return this.Timers.ECLTimer.map((eclTimer) => {
             return new Timer(this.connection, this.Wuid, eclTimer);
@@ -108,7 +108,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
 
     private _graphCache = new GraphCache();
     get GraphCount(): number { return this.get("GraphCount", 0); }
-    get Graphs(): WsWorkunits.Graphs { return this.get("Graphs", { ECLGraph: [] }); }
+    get Graphs(): WsWorkunits.WUInfo.Graphs { return this.get("Graphs", { ECLGraph: [] }); }
     get CGraphs(): ECLGraph[] {
         return this.Graphs.ECLGraph.map((eclGraph) => {
             return this._graphCache.get(eclGraph, () => {
@@ -116,19 +116,19 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
             });
         });
     }
-    get ThorLogList(): WsWorkunits.ThorLogList { return this.get("ThorLogList"); }
+    get ThorLogList(): WsWorkunits.WUInfo.ThorLogList { return this.get("ThorLogList"); }
     get ResourceURLCount(): number { return this.get("ResourceURLCount", 0); }
-    get ResourceURLs(): WsWorkunits.ResourceURLs { return this.get("ResourceURLs", { URL: [] }); }
+    get ResourceURLs(): WsWorkunits.WUInfo.ResourceURLs { return this.get("ResourceURLs", { URL: [] }); }
     get CResourceURLs(): Resource[] {
         return this.ResourceURLs.URL.map((url) => {
             return new Resource(this, url);
         });
     }
     get TotalClusterTime(): string { return this.get("TotalClusterTime", ""); }
-    get DateTimeScheduled(): Date { return this.get("DateTimeScheduled"); }
+    get DateTimeScheduled(): string { return this.get("DateTimeScheduled"); }
     get IsPausing(): boolean { return this.get("IsPausing"); }
     get ThorLCR(): boolean { return this.get("ThorLCR"); }
-    get ApplicationValues(): WsWorkunits.ApplicationValues { return this.get("ApplicationValues", { ApplicationValue: [] }); }
+    get ApplicationValues(): WsWorkunits.WUInfo.ApplicationValues { return this.get("ApplicationValues", { ApplicationValue: [] }); }
     get HasArchiveQuery(): boolean { return this.get("HasArchiveQuery"); }
     get StateEx(): string { return this.get("StateEx"); }
     get PriorityClass(): number { return this.get("PriorityClass"); }
@@ -137,24 +137,24 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
     get ResultLimit(): number { return this.get("ResultLimit"); }
     get EventSchedule(): number { return this.get("EventSchedule"); }
     get HaveSubGraphTimings(): boolean { return this.get("HaveSubGraphTimings"); }
-    get Query(): WsWorkunits.Query { return this.get("Query"); }
+    get Query(): WsWorkunits.WUInfo.Query { return this.get("Query"); }
     get HelpersCount(): number { return this.get("HelpersCount", 0); }
-    get Helpers(): WsWorkunits.Helpers { return this.get("Helpers", { ECLHelpFile: [] }); }
-    get DebugValues(): WsWorkunits.DebugValues { return this.get("DebugValues"); }
-    get AllowedClusters(): WsWorkunits.AllowedClusters { return this.get("AllowedClusters"); }
+    get Helpers(): WsWorkunits.WUInfo.Helpers { return this.get("Helpers", { ECLHelpFile: [] }); }
+    get DebugValues(): WsWorkunits.WUInfo.DebugValues { return this.get("DebugValues"); }
+    get AllowedClusters(): WsWorkunits.WUInfo.AllowedClusters { return this.get("AllowedClusters"); }
     get ErrorCount(): number { return this.get("ErrorCount", 0); }
     get WarningCount(): number { return this.get("WarningCount", 0); }
     get InfoCount(): number { return this.get("InfoCount", 0); }
     get AlertCount(): number { return this.get("AlertCount", 0); }
     get SourceFileCount(): number { return this.get("SourceFileCount", 0); }
-    get SourceFiles(): WsWorkunits.SourceFiles { return this.get("SourceFiles", { ECLSourceFile: [] }); }
+    get SourceFiles(): WsWorkunits.WUInfo.SourceFiles { return this.get("SourceFiles", { ECLSourceFile: [] }); }
     get CSourceFiles(): SourceFile[] {
         return this.SourceFiles.ECLSourceFile.map((eclSourceFile) => {
             return new SourceFile(this.connection, this.Wuid, eclSourceFile);
         });
     }
     get VariableCount(): number { return this.get("VariableCount", 0); }
-    get Variables(): any { return this.get("Variables", { ECLVariable: [] }); }
+    get Variables(): WsWorkunits.WUInfo.Variables { return this.get("Variables", { ECLResult: [] }); }
     get TimerCount(): number { return this.get("TimerCount", 0); }
     get HasDebugValue(): boolean { return this.get("HasDebugValue"); }
     get ApplicationValueCount(): number { return this.get("ApplicationValueCount", 0); }
@@ -165,7 +165,25 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
     get DebugValueCount(): number { return this.get("DebugValueCount", 0); }
     get WorkflowCount(): number { return this.get("WorkflowCount", 0); }
     get Archived(): boolean { return this.get("Archived"); }
+    get RoxieCluster(): string { return this.get("RoxieCluster"); }
     get DebugState(): DebugState { return this.get("DebugState", {} as DebugState); }
+    get Queue(): string { return this.get("Queue"); }
+    get Active(): boolean { return this.get("Active"); }
+    get Action(): number { return this.get("Action"); }
+    get Scope(): string { return this.get("Scope"); }
+    get AbortBy(): string { return this.get("AbortBy"); }
+    get AbortTime(): string { return this.get("AbortTime"); }
+    get Workflows(): WsWorkunits.WUInfo.Workflows { return this.get("Workflows"); }
+    get TimingData(): WsWorkunits.WUInfo.TimingData { return this.get("TimingData"); }
+    get HelpersDesc(): string { return this.get("HelpersDesc"); }
+    get GraphsDesc(): string { return this.get("GraphsDesc"); }
+    get SourceFilesDesc(): string { return this.get("GraphsDesc"); }
+    get ResultsDesc(): string { return this.get("GraphsDesc"); }
+    get VariablesDesc(): string { return this.get("GraphsDesc"); }
+    get TimersDesc(): string { return this.get("GraphsDesc"); }
+    get DebugValuesDesc(): string { return this.get("GraphsDesc"); }
+    get ApplicationValuesDesc(): string { return this.get("GraphsDesc"); }
+    get WorkflowsDesc(): string { return this.get("GraphsDesc"); }
 
     //  Factories  ---
     static create(optsConnection: IOptions | IConnection): Promise<Workunit> {
@@ -177,7 +195,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
         });
     }
 
-    static attach(optsConnection: IOptions | IConnection, wuid: string, state?: WsWorkunits.ECLWorkunit | WsWorkunits.Workunit): Workunit {
+    static attach(optsConnection: IOptions | IConnection, wuid: string, state?: WsWorkunits.WUQuery.ECLWorkunit | WsWorkunits.WUInfo.Workunit): Workunit {
         const retVal: Workunit = _workunits.get({ Wuid: wuid }, () => {
             return new Workunit(optsConnection, wuid);
         });
@@ -199,7 +217,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
         });
     }
 
-    static query(server: IOptions | IConnection, opts: WsWorkunits.WUQueryRequest): Promise<Workunit[]> {
+    static query(server: IOptions | IConnection, opts: WsWorkunits.WUQuery.Request): Promise<Workunit[]> {
         const wsWorkunits = new WsWorkunits.Service(server);
         return wsWorkunits.WUQuery(opts).then((response) => {
             return response.Workunits.ECLWorkunit.map(function (wu) {
@@ -224,7 +242,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
         this._monitorTickCount = 0;
     }
 
-    update(request: Partial<WsWorkunits.WUUpdateRequest>, appData?: any, debugData?: any): Promise<Workunit> {
+    update(request: Partial<WsWorkunits.WUUpdate.Request>, appData?: any, debugData?: any): Promise<Workunit> {
         return this.connection.WUUpdate({
             ...request, ...{
                 Wuid: this.Wuid,
@@ -242,7 +260,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
         });
     }
 
-    submit(_cluster?: string, action: WsWorkunits.WUAction = WsWorkunits.WUAction.Run, resultLimit?: number): Promise<Workunit> {
+    submit(_cluster?: string, action: WsWorkunits.WUUpdate.Action = WsWorkunits.WUUpdate.Action.Run, resultLimit?: number): Promise<Workunit> {
         let clusterPromise;
         if (_cluster !== void 0) {
             clusterPromise = Promise.resolve(_cluster);
@@ -253,8 +271,8 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
         }
 
         this._debugMode = false;
-        if (action === WsWorkunits.WUAction.Debug) {
-            action = WsWorkunits.WUAction.Run;
+        if (action === WsWorkunits.WUUpdate.Action.Debug) {
+            action = WsWorkunits.WUUpdate.Action.Run;
             this._debugMode = true;
         }
 
@@ -276,7 +294,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
     isComplete(): boolean {
         switch (this.StateID) {
             case WUStateID.Compiled:
-                return this.ActionEx === "compile" || this._submitAction === WsWorkunits.WUAction.Compile;
+                return this.ActionEx === "compile" || this._submitAction === WsWorkunits.WUUpdate.Action.Compile;
             case WUStateID.Completed:
             case WUStateID.Failed:
             case WUStateID.Aborted:
@@ -390,7 +408,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
     }
 
     refresh(full: boolean = false): Promise<Workunit> {
-        const refreshPromise: Promise<WsWorkunits.WUInfoResponse | WsWorkunits.WUQueryResponse> = full ? this.WUInfo() : this.WUQuery();
+        const refreshPromise: Promise<WsWorkunits.WUInfo.Response | WsWorkunits.WUQuery.Response> = full ? this.WUInfo() : this.WUQuery();
         const debugPromise = this.debugStatus();
         return Promise.all([
             refreshPromise,
@@ -606,7 +624,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
     }
 
     //  WsWorkunits passthroughs  ---
-    protected WUQuery(_request: Partial<WsWorkunits.WUQueryRequest> = {}): Promise<WsWorkunits.WUQueryResponse> {
+    protected WUQuery(_request: Partial<WsWorkunits.WUQuery.Request> = {}): Promise<WsWorkunits.WUQuery.Response> {
         return this.connection.WUQuery({ ..._request, Wuid: this.Wuid }).then((response) => {
             this.set(response.Workunits.ECLWorkunit[0]);
             return response;
@@ -636,7 +654,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
         });
     }
 
-    protected WUInfo(_request: Partial<WsWorkunits.WUInfoRequest> = {}): Promise<WsWorkunits.WUInfoResponse> {
+    protected WUInfo(_request: Partial<WsWorkunits.WUInfo.Request> = {}): Promise<WsWorkunits.WUInfo.Response> {
         const includeResults = _request.IncludeResults || _request.IncludeResultsViewNames;
         return this.connection.WUInfo({
             ..._request, Wuid: this.Wuid,
@@ -676,8 +694,8 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
         });
     }
 
-    protected WUResubmit(request: Partial<WsWorkunits.WUResubmitRequest>): Promise<WsWorkunits.WUResubmitResponse> {
-        return this.connection.WUResubmit(deepMixinT<WsWorkunits.WUResubmitRequest>({}, request, {
+    protected WUResubmit(request: Partial<WsWorkunits.WUResubmit.Request>): Promise<WsWorkunits.WUResubmit.Response> {
+        return this.connection.WUResubmit(deepMixinT<WsWorkunits.WUResubmit.Request>({}, request, {
             Wuids: [this.Wuid]
         }));
     }
@@ -704,7 +722,7 @@ export class Workunit extends StateObject<UWorkunitState, IWorkunitState> implem
         });
     }
 
-    protected WUAction(actionType: WsWorkunits.WUActionType): Promise<WsWorkunits.WUActionResponse> {
+    protected WUAction(actionType: WsWorkunits.WUAction.Type): Promise<WsWorkunits.WUAction.Response> {
         return this.connection.WUAction({
             Wuids: [this.Wuid],
             WUActionType: actionType
