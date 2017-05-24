@@ -2,10 +2,9 @@
   "name": "@hpcc-js/comms",
   "version": "0.0.1",
   "description": "hpcc-js-comms - HPCC Platform Client Comms Library",
-  "main": "dist/comms.js",
-  "browser": "dist/comms-browser.js",
-  "module": "lib/index-node.js",
-  "jsnext": "lib/index-node.js",
+  "browser": "lib/index-browser.js",
+  "module": "lib/index-node",
+  "main": "lib/index-node.js",
   "types": "lib/index-node.d.ts",
   "files": [
     "dist/**/*.*",
